@@ -34,6 +34,7 @@ export type IprAuthPersistenceStage =
 export type IprAuthStoreCapability =
   | "IPR_CREDENTIAL_STORAGE"
   | "PASSWORD_HASH_STORAGE"
+  | "LOGIN_ATTEMPT_GOVERNANCE"
   | "SESSION_TOKEN_HASH_STORAGE"
   | "SESSION_CREATE"
   | "SESSION_VERIFY"
@@ -66,6 +67,12 @@ export type IprAuthCredentialCreateInput = {
   passwordSalt: string;
   passwordKeyLength: number;
   credentialPayload?: Record<string, unknown>;
+};
+
+export type IprLoginFailureInput = {
+  humanIpr: string;
+  maxFailedAttempts: number;
+  lockDurationSeconds: number;
 };
 
 export type IprAuthStoredCredential = {
@@ -182,6 +189,14 @@ export type IprAuthStoreAdapter = {
     input: IprAuthCredentialCreateInput
   ): Promise<IprAuthStoredCredential>;
 
+  recordFailedLoginAttemptAsync(
+    input: IprLoginFailureInput
+  ): Promise<IprAuthStoredCredential | null>;
+
+  resetLoginAttemptsAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null>;
+
   createSessionAsync(input: IprSessionCreateInput): Promise<IprAuthStoredSession>;
   verifySessionTokenAsync(token: string): Promise<IprSessionLookupResult>;
   revokeSessionAsync(sessionId: string): Promise<IprAuthStoredSession | null>;
@@ -245,6 +260,7 @@ export const IPR_AUTH_EXTERNAL_ADAPTER_BOUNDARY =
 const PROCESS_AUTH_CAPABILITIES: IprAuthStoreCapability[] = [
   "IPR_CREDENTIAL_STORAGE",
   "PASSWORD_HASH_STORAGE",
+  "LOGIN_ATTEMPT_GOVERNANCE",
   "SESSION_TOKEN_HASH_STORAGE",
   "SESSION_CREATE",
   "SESSION_VERIFY",
@@ -258,6 +274,7 @@ const PROCESS_AUTH_CAPABILITIES: IprAuthStoreCapability[] = [
 const DATABASE_READY_CAPABILITIES: IprAuthStoreCapability[] = [
   "IPR_CREDENTIAL_STORAGE",
   "PASSWORD_HASH_STORAGE",
+  "LOGIN_ATTEMPT_GOVERNANCE",
   "SESSION_TOKEN_HASH_STORAGE",
   "SESSION_CREATE",
   "SESSION_VERIFY",
@@ -275,6 +292,7 @@ const DATABASE_READY_CAPABILITIES: IprAuthStoreCapability[] = [
 const DATABASE_PERSISTENT_CAPABILITIES: IprAuthStoreCapability[] = [
   "IPR_CREDENTIAL_STORAGE",
   "PASSWORD_HASH_STORAGE",
+  "LOGIN_ATTEMPT_GOVERNANCE",
   "SESSION_TOKEN_HASH_STORAGE",
   "SESSION_CREATE",
   "SESSION_VERIFY",
@@ -297,6 +315,7 @@ const DATABASE_PERSISTENT_CAPABILITIES: IprAuthStoreCapability[] = [
 const EXTERNAL_ADAPTER_CAPABILITIES: IprAuthStoreCapability[] = [
   "IPR_CREDENTIAL_STORAGE",
   "PASSWORD_HASH_STORAGE",
+  "LOGIN_ATTEMPT_GOVERNANCE",
   "SESSION_TOKEN_HASH_STORAGE",
   "SESSION_CREATE",
   "SESSION_VERIFY",
@@ -350,6 +369,19 @@ const EXTERNAL_ADAPTER_REQUIREMENTS = [
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function assertPositiveInteger(
+  value: number,
+  label: string
+): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `IPR_AUTH_INVALID_${label.toUpperCase()}`
+    );
+  }
+
+  return value;
 }
 
 function generateSessionId(): string {
@@ -637,6 +669,103 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
     return credential;
   }
 
+  replaceCredential(
+    credential: IprAuthStoredCredential
+  ): IprAuthStoredCredential {
+    this.credentials.set(
+      normalizeHumanIpr(credential.humanIpr),
+      credential
+    );
+
+    return credential;
+  }
+
+  recordFailedLoginAttempt(
+    input: IprLoginFailureInput
+  ): IprAuthStoredCredential | null {
+    const credential = this.getCredential(
+      input.humanIpr
+    );
+
+    if (!credential) {
+      return null;
+    }
+
+    const maxFailedAttempts =
+      assertPositiveInteger(
+        input.maxFailedAttempts,
+        "max_failed_attempts"
+      );
+
+    const lockDurationSeconds =
+      assertPositiveInteger(
+        input.lockDurationSeconds,
+        "lock_duration_seconds"
+      );
+
+    const now = Date.now();
+
+    const currentLockExpiry =
+      credential.lockedUntil
+        ? Date.parse(credential.lockedUntil)
+        : Number.NaN;
+
+    const lockActive =
+      Number.isFinite(currentLockExpiry) &&
+      currentLockExpiry > now;
+
+    const previousLockExpired =
+      Number.isFinite(currentLockExpiry) &&
+      currentLockExpiry <= now;
+
+    const failedAttempts =
+      lockActive
+        ? credential.failedAttempts
+        : (
+            previousLockExpired
+              ? 0
+              : credential.failedAttempts
+          ) + 1;
+
+    const lockedUntil =
+      lockActive
+        ? credential.lockedUntil
+        : failedAttempts >= maxFailedAttempts
+          ? new Date(
+              now
+              + lockDurationSeconds * 1000
+            ).toISOString()
+          : null;
+
+    const updated: IprAuthStoredCredential = {
+      ...credential,
+      failedAttempts,
+      lockedUntil
+    };
+
+    return this.replaceCredential(updated);
+  }
+
+  resetLoginAttempts(
+    humanIpr: string
+  ): IprAuthStoredCredential | null {
+    const credential =
+      this.getCredential(humanIpr);
+
+    if (!credential) {
+      return null;
+    }
+
+    const updated: IprAuthStoredCredential = {
+      ...credential,
+      failedAttempts: 0,
+      lockedUntil: null,
+      passwordLastVerifiedAt: nowIso()
+    };
+
+    return this.replaceCredential(updated);
+  }
+
   createSession(input: IprSessionCreateInput): IprAuthStoredSession {
     const session = buildStoredSession(input);
     this.sessions.set(session.sessionId, session);
@@ -730,6 +859,18 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
     return this.setCredential(input);
   }
 
+  async recordFailedLoginAttemptAsync(
+    input: IprLoginFailureInput
+  ): Promise<IprAuthStoredCredential | null> {
+    return this.recordFailedLoginAttempt(input);
+  }
+
+  async resetLoginAttemptsAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null> {
+    return this.resetLoginAttempts(humanIpr);
+  }
+
   async createSessionAsync(
     input: IprSessionCreateInput
   ): Promise<IprAuthStoredSession> {
@@ -810,6 +951,20 @@ class DatabaseReadyIprAuthStore implements IprAuthStoreAdapter {
     input: IprAuthCredentialCreateInput
   ): Promise<IprAuthStoredCredential> {
     return this.processFallback.setCredentialAsync(input);
+  }
+
+  async recordFailedLoginAttemptAsync(
+    input: IprLoginFailureInput
+  ): Promise<IprAuthStoredCredential | null> {
+    return this.processFallback
+      .recordFailedLoginAttemptAsync(input);
+  }
+
+  async resetLoginAttemptsAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null> {
+    return this.processFallback
+      .resetLoginAttemptsAsync(humanIpr);
   }
 
   async createSessionAsync(
@@ -1131,6 +1286,153 @@ RETURNING
     });
 
     return storedCredential;
+  }
+
+  async recordFailedLoginAttemptAsync(
+    input: IprLoginFailureInput
+  ): Promise<IprAuthStoredCredential | null> {
+    assertDatabaseConfigured();
+
+    const humanIpr =
+      normalizeHumanIpr(input.humanIpr);
+
+    const maxFailedAttempts =
+      assertPositiveInteger(
+        input.maxFailedAttempts,
+        "max_failed_attempts"
+      );
+
+    const lockDurationSeconds =
+      assertPositiveInteger(
+        input.lockDurationSeconds,
+        "lock_duration_seconds"
+      );
+
+    const result =
+      await queryHbceDatabase<IprAuthCredentialRow>(
+        `
+UPDATE ipr_auth_credentials
+SET
+  failed_attempts = CASE
+    WHEN locked_until IS NOT NULL
+      AND locked_until > now()
+    THEN failed_attempts
+    WHEN locked_until IS NOT NULL
+      AND locked_until <= now()
+    THEN 1
+    ELSE failed_attempts + 1
+  END,
+  locked_until = CASE
+    WHEN locked_until IS NOT NULL
+      AND locked_until > now()
+    THEN locked_until
+    WHEN (
+      CASE
+        WHEN locked_until IS NOT NULL
+          AND locked_until <= now()
+        THEN 1
+        ELSE failed_attempts + 1
+      END
+    ) >= $2::integer
+    THEN now() + (
+      $3::integer * INTERVAL '1 second'
+    )
+    ELSE NULL
+  END
+WHERE human_ipr = $1
+RETURNING
+  human_ipr,
+  password_algorithm,
+  password_hash,
+  password_salt,
+  password_key_length,
+  password_created_at,
+  password_updated_at,
+  password_last_verified_at,
+  failed_attempts,
+  locked_until,
+  credential_payload,
+  legal_certification
+        `.trim(),
+        [
+          humanIpr,
+          maxFailedAttempts,
+          lockDurationSeconds
+        ]
+      );
+
+    if (!result.ok) {
+      throw new Error(
+        result.error ||
+          "IPR_AUTH_FAILED_ATTEMPT_DATABASE_WRITE_FAILED"
+      );
+    }
+
+    if (!result.rows[0]) {
+      return null;
+    }
+
+    const credential =
+      credentialFromRow(result.rows[0]);
+
+    this.processFallback
+      .replaceCredential(credential);
+
+    return credential;
+  }
+
+  async resetLoginAttemptsAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null> {
+    assertDatabaseConfigured();
+
+    const normalizedHumanIpr =
+      normalizeHumanIpr(humanIpr);
+
+    const result =
+      await queryHbceDatabase<IprAuthCredentialRow>(
+        `
+UPDATE ipr_auth_credentials
+SET
+  failed_attempts = 0,
+  locked_until = NULL,
+  password_last_verified_at = now()
+WHERE human_ipr = $1
+RETURNING
+  human_ipr,
+  password_algorithm,
+  password_hash,
+  password_salt,
+  password_key_length,
+  password_created_at,
+  password_updated_at,
+  password_last_verified_at,
+  failed_attempts,
+  locked_until,
+  credential_payload,
+  legal_certification
+        `.trim(),
+        [normalizedHumanIpr]
+      );
+
+    if (!result.ok) {
+      throw new Error(
+        result.error ||
+          "IPR_AUTH_LOGIN_RESET_DATABASE_WRITE_FAILED"
+      );
+    }
+
+    if (!result.rows[0]) {
+      return null;
+    }
+
+    const credential =
+      credentialFromRow(result.rows[0]);
+
+    this.processFallback
+      .replaceCredential(credential);
+
+    return credential;
   }
 
   async createSessionAsync(
@@ -1487,6 +1789,24 @@ class ExternalAdapterPlaceholderIprAuthStore implements IprAuthStoreAdapter {
     input: IprAuthCredentialCreateInput
   ): Promise<IprAuthStoredCredential> {
     return this.setCredential(input);
+  }
+
+  async recordFailedLoginAttemptAsync(
+    input: IprLoginFailureInput
+  ): Promise<IprAuthStoredCredential | null> {
+    void input;
+    throw new Error(
+      EXTERNAL_STORE_NOT_CONFIGURED_ERROR
+    );
+  }
+
+  async resetLoginAttemptsAsync(
+    humanIpr: string
+  ): Promise<IprAuthStoredCredential | null> {
+    void humanIpr;
+    throw new Error(
+      EXTERNAL_STORE_NOT_CONFIGURED_ERROR
+    );
   }
 
   async createSessionAsync(

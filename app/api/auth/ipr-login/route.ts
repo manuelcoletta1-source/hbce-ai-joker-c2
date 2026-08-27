@@ -83,6 +83,9 @@ const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_ALGORITHM = "scrypt-sha256-v1";
 const PASSWORD_KEY_LENGTH = 64;
 
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_DURATION_SECONDS = 15 * 60;
+
 const DUMMY_PASSWORD_SALT =
   "HBCE-IPR-AUTH-DUMMY-SALT-v1";
 
@@ -1375,13 +1378,34 @@ async function handleLogin(
     verificationCredential
   );
 
-  if (!credential || !verified) {
+  const lockedUntilMs =
+    credential?.lockedUntil
+      ? Date.parse(credential.lockedUntil)
+      : Number.NaN;
+
+  const credentialLocked =
+    Number.isFinite(lockedUntilMs) &&
+    lockedUntilMs > Date.now();
+
+  if (
+    credentialLocked ||
+    !credential ||
+    !verified
+  ) {
+    await authStore.recordFailedLoginAttemptAsync({
+      humanIpr,
+      maxFailedAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+      lockDurationSeconds: LOGIN_LOCK_DURATION_SECONDS
+    });
+
     return buildErrorResponse(
       401,
       "IPR_AUTHENTICATION_FAILED",
       "The supplied Human IPR or password is invalid."
     );
   }
+
+  await authStore.resetLoginAttemptsAsync(humanIpr);
 
   const accountProfile = await accountStore.getProfileAsync(humanIpr);
 
