@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   }
 
   const store = getDefaultIprAuthStore();
-  const verification = store.verifySessionToken(token);
+  const verification = await store.verifySessionTokenAsync(token);
 
   if (!verification.session) {
     return buildLogoutResponse({
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const revoked = store.revokeSession(verification.session.sessionId);
+  const revoked = await store.revokeSessionAsync(verification.session.sessionId);
 
   return buildLogoutResponse({
     revoked: Boolean(revoked),
