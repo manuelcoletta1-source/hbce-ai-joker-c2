@@ -83,6 +83,15 @@ const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_ALGORITHM = "scrypt-sha256-v1";
 const PASSWORD_KEY_LENGTH = 64;
 
+const DUMMY_PASSWORD_SALT =
+  "HBCE-IPR-AUTH-DUMMY-SALT-v1";
+
+const DUMMY_PASSWORD_HASH = scryptSync(
+  "HBCE-IPR-AUTH-DUMMY-CREDENTIAL-v1",
+  DUMMY_PASSWORD_SALT,
+  PASSWORD_KEY_LENGTH
+).toString("hex");
+
 const ROUTE_BOUNDARY =
   "This route creates and verifies HBCE IPR account access for JOKER-C2. It stores password hashes and session token hashes only. It does not store plaintext passwords, does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
 
@@ -1354,26 +1363,23 @@ async function handleLogin(
 
   const credential = await authStore.getCredentialAsync(humanIpr);
 
-  if (!credential) {
+  const verificationCredential = credential || {
+    passwordAlgorithm: PASSWORD_ALGORITHM,
+    passwordHash: DUMMY_PASSWORD_HASH,
+    passwordSalt: DUMMY_PASSWORD_SALT,
+    passwordKeyLength: PASSWORD_KEY_LENGTH
+  };
+
+  const verified = verifyPasswordLocally(
+    password,
+    verificationCredential
+  );
+
+  if (!credential || !verified) {
     return buildErrorResponse(
       401,
-      "IPR_CREDENTIAL_NOT_FOUND",
-      "No HBCE IPR password credential exists for this Human IPR. Run SET_PASSWORD with a valid IPR handoff first."
-    );
-  }
-
-  const verified = verifyPasswordLocally(password, {
-    passwordAlgorithm: credential.passwordAlgorithm,
-    passwordHash: credential.passwordHash,
-    passwordSalt: credential.passwordSalt,
-    passwordKeyLength: credential.passwordKeyLength
-  });
-
-  if (!verified) {
-    return buildErrorResponse(
-      401,
-      "IPR_PASSWORD_INVALID",
-      "The supplied password does not match the stored HBCE IPR credential."
+      "IPR_AUTHENTICATION_FAILED",
+      "The supplied Human IPR or password is invalid."
     );
   }
 
