@@ -339,6 +339,43 @@ function normalizeDefinition(
 }
 
 
+const POSTGRES_IDENTIFIER_MAX_BYTES = 63;
+
+
+function normalizePostgresIdentifier(
+  value: string
+): string {
+  if (
+    Buffer.byteLength(
+      value,
+      "utf8"
+    ) <= POSTGRES_IDENTIFIER_MAX_BYTES
+  ) {
+    return value;
+  }
+
+  let normalized = "";
+
+  for (const character of value) {
+    const candidate =
+      `${normalized}${character}`;
+
+    if (
+      Buffer.byteLength(
+        candidate,
+        "utf8"
+      ) > POSTGRES_IDENTIFIER_MAX_BYTES
+    ) {
+      break;
+    }
+
+    normalized = candidate;
+  }
+
+  return normalized;
+}
+
+
 function queryFailure(
   id: PhysicalProofCheckId,
   error: unknown
@@ -675,7 +712,11 @@ async function inspectConstraints():
   const missing =
     REQUIRED_CONSTRAINTS.filter(
       (name) =>
-        !definitions.has(name)
+        !definitions.has(
+          normalizePostgresIdentifier(
+            name
+          )
+        )
     );
 
   const semanticFailures =
@@ -688,7 +729,11 @@ async function inspectConstraints():
     ).filter(
       (name) => {
         const definition =
-          definitions.get(name);
+          definitions.get(
+            normalizePostgresIdentifier(
+              name
+            )
+          );
 
         return (
           !definition ||
