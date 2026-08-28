@@ -55,6 +55,7 @@ function buildLogoutResponse(input: {
         "The IPR account session has been closed or is unavailable. JOKER-C2 must not continue persistent biological identity recognition from a revoked or missing session."
     },
     boundary: AUTH_LOGOUT_BOUNDARY,
+    legalCertification: false,
     store: describeDefaultIprAuthStore()
   });
 
