@@ -1165,13 +1165,22 @@ class DatabasePersistentIprAuthStore implements IprAuthStoreAdapter {
   }
 
   verifySessionToken(token: string): IprSessionLookupResult {
-    const result = this.processFallback.verifySessionToken(token);
+    /*
+     * DATABASE_PERSISTENT verification authority belongs
+     * exclusively to the persistent database.
+     *
+     * This synchronous method cannot prove persistent state,
+     * therefore it MUST NOT authenticate from process-local
+     * fallback state.
+     */
+    assertToken(token);
 
-    if (result.ok && result.session) {
-      this.touchSessionFireAndForget(result.session.sessionId);
-    }
-
-    return result;
+    return {
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_NOT_FOUND",
+      session: null
+    };
   }
 
   revokeSession(sessionId: string): IprAuthStoredSession | null {
@@ -1636,8 +1645,33 @@ LIMIT 1
       [tokenHash]
     );
 
-    if (!result.ok || !result.rows[0]) {
-      return this.processFallback.verifySessionToken(token);
+    if (!result.ok) {
+      /*
+       * Persistent verification infrastructure failed.
+       *
+       * Never convert a database failure into process-local
+       * authentication. The caller must fail closed.
+       */
+      throw new Error(
+        result.error ||
+        "IPR_SESSION_DATABASE_VERIFY_FAILED"
+      );
+    }
+
+    if (!result.rows[0]) {
+      /*
+       * Database miss is authoritative.
+       *
+       * A process-local copy may be stale because another
+       * runtime instance can revoke the persistent session,
+       * including during password recovery.
+       */
+      return {
+        ok: false,
+        authenticated: false,
+        reason: "SESSION_NOT_FOUND",
+        session: null
+      };
     }
 
     const session = sessionFromRow(result.rows[0]);
