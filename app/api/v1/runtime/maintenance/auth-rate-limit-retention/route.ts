@@ -484,6 +484,9 @@ export async function POST(
           staleAfterSeconds:
             result.staleAfterSeconds,
 
+          maximumBucketsPerRun:
+            result.maximumBucketsPerRun,
+
           legalCertification:
             false
         },
@@ -515,6 +518,12 @@ export async function POST(
 
           acceptsRetentionOverride:
             false,
+
+          acceptsBatchLimitOverride:
+            false,
+
+          boundedBatch:
+            true,
 
           performsDatabaseRead:
             true,

@@ -761,9 +761,52 @@ describe(
               );
 
               expect(
+                sql
+              ).toContain(
+                "WITH candidates AS"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "ORDER BY"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "updated_at ASC"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "bucket_key_hash ASC"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "LIMIT $2::integer"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "FOR UPDATE SKIP LOCKED"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "USING candidates"
+              );
+
+              expect(
                 parameters
               ).toEqual([
-                24 * 60 * 60
+                24 * 60 * 60,
+                500
               ]);
 
               return {
@@ -861,6 +904,10 @@ describe(
         ).toBe(
           24 * 60 * 60
         );
+
+        expect(
+          result.maximumBucketsPerRun
+        ).toBe(500);
 
         expect(
           result.legalCertification

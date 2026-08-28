@@ -679,6 +679,9 @@ describe(
             staleAfterSeconds:
               86400,
 
+            maximumBucketsPerRun:
+              500,
+
             legalCertification:
               false
           });
@@ -696,6 +699,12 @@ describe(
 
                 staleAfterSeconds:
                   1,
+
+                maximumBucketsPerRun:
+                  999999,
+
+                batchLimit:
+                  999999,
 
                 deleteAll:
                   true
@@ -733,6 +742,10 @@ describe(
         ).toBe(86400);
 
         expect(
+          body.result.maximumBucketsPerRun
+        ).toBe(500);
+
+        expect(
           body.boundary.operation
         ).toBe(
           "PRUNE_STALE_AUTH_RATE_LIMIT_BUCKETS"
@@ -753,6 +766,18 @@ describe(
         expect(
           body.boundary.acceptsRetentionOverride
         ).toBe(false);
+
+        expect(
+          body.boundary.acceptsBatchLimitOverride
+        ).toBe(false);
+
+        expect(
+          body.boundary.boundedBatch
+        ).toBe(true);
+
+        expect(
+          body.boundary.performsDatabaseRead
+        ).toBe(true);
 
         expect(
           body.boundary.performsDatabaseMutation
@@ -801,6 +826,12 @@ describe(
           serialized
         ).not.toContain(
           "IPR-CLIENT-MUST-NOT-CONTROL"
+        );
+
+        expect(
+          serialized
+        ).not.toContain(
+          "999999"
         );
 
         expect(

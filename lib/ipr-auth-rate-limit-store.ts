@@ -53,6 +53,9 @@ export const IPR_AUTH_RATE_LIMIT_BOUNDARY = {
     staleAfterSeconds:
       24 * 60 * 60,
 
+    maximumBucketsPerRun:
+      500,
+
     automaticPruning:
       false,
 
@@ -141,6 +144,9 @@ export type IprAuthRateLimitPruneResult = {
     number;
 
   staleAfterSeconds:
+    number;
+
+  maximumBucketsPerRun:
     number;
 
   legalCertification:
@@ -897,21 +903,35 @@ WHERE
 
 
 const PRUNE_STALE_BUCKETS_SQL = `
-DELETE FROM ipr_auth_rate_limit_buckets
-WHERE
-  updated_at <=
-    now() -
-    (
-      $1::integer *
-      INTERVAL '1 second'
+WITH candidates AS (
+  SELECT
+    bucket_key_hash
+  FROM ipr_auth_rate_limit_buckets
+  WHERE
+    updated_at <=
+      now() -
+      (
+        $1::integer *
+        INTERVAL '1 second'
+      )
+    AND (
+      blocked_until IS NULL
+      OR blocked_until <= now()
     )
-  AND (
-    blocked_until IS NULL
-    OR blocked_until <= now()
-  )
-  AND legal_certification = false
+    AND legal_certification = false
+  ORDER BY
+    updated_at ASC,
+    bucket_key_hash ASC
+  LIMIT $2::integer
+  FOR UPDATE SKIP LOCKED
+)
+DELETE FROM ipr_auth_rate_limit_buckets AS buckets
+USING candidates
+WHERE
+  buckets.bucket_key_hash =
+    candidates.bucket_key_hash
 RETURNING
-  bucket_kind
+  buckets.bucket_kind
 `.trim();
 
 
@@ -1224,6 +1244,11 @@ export class PersistentIprAuthRateLimitStore {
         .retentionPolicy
         .staleAfterSeconds;
 
+    const maximumBucketsPerRun =
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .retentionPolicy
+        .maximumBucketsPerRun;
+
     const outcome =
       await withHbceDatabaseTransaction(
         async (
@@ -1234,7 +1259,8 @@ export class PersistentIprAuthRateLimitStore {
             await context.query(
               PRUNE_STALE_BUCKETS_SQL,
               [
-                staleAfterSeconds
+                staleAfterSeconds,
+                maximumBucketsPerRun
               ]
             );
 
@@ -1270,6 +1296,8 @@ export class PersistentIprAuthRateLimitStore {
         outcome.value.deletedBuckets,
 
       staleAfterSeconds,
+
+      maximumBucketsPerRun,
 
       legalCertification:
         false
