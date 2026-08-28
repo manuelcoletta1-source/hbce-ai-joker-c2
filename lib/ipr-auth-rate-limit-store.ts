@@ -148,6 +148,21 @@ export type IprAuthRateLimitPruneResult = {
 };
 
 
+export type IprAuthRateLimitRetentionPreflightResult = {
+  eligibleBuckets:
+    number;
+
+  staleAfterSeconds:
+    number;
+
+  databaseReadOnly:
+    true;
+
+  legalCertification:
+    false;
+};
+
+
 export type IprAuthRateLimitRequestState = {
   blocked:
     boolean;
@@ -862,6 +877,25 @@ function latestBlockedUntil(
 }
 
 
+const RETENTION_PREFLIGHT_SQL = `
+SELECT
+  COUNT(*)::integer AS eligible_buckets
+FROM ipr_auth_rate_limit_buckets
+WHERE
+  updated_at <=
+    now() -
+    (
+      $1::integer *
+      INTERVAL '1 second'
+    )
+  AND (
+    blocked_until IS NULL
+    OR blocked_until <= now()
+  )
+  AND legal_certification = false
+`.trim();
+
+
 const PRUNE_STALE_BUCKETS_SQL = `
 DELETE FROM ipr_auth_rate_limit_buckets
 WHERE
@@ -1134,6 +1168,51 @@ export class PersistentIprAuthRateLimitStore {
      */
 
     return outcome.value;
+  }
+
+
+  async inspectRetentionEligibilityAsync():
+    Promise<IprAuthRateLimitRetentionPreflightResult> {
+
+    const staleAfterSeconds =
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .retentionPolicy
+        .staleAfterSeconds;
+
+    const result =
+      await queryHbceDatabaseWithoutSchemaInitialization<
+        HbceDatabaseQueryRow & {
+          eligible_buckets?: unknown;
+        }
+      >(
+        RETENTION_PREFLIGHT_SQL,
+        [
+          staleAfterSeconds
+        ]
+      );
+
+    if (!result.ok) {
+      throw new Error(
+        result.error ||
+        "HBCE_AUTH_RATE_LIMIT_RETENTION_PREFLIGHT_FAILED"
+      );
+    }
+
+    return {
+      eligibleBuckets:
+        integerOrZero(
+          result.rows[0]
+            ?.eligible_buckets
+        ),
+
+      staleAfterSeconds,
+
+      databaseReadOnly:
+        true,
+
+      legalCertification:
+        false
+    };
   }
 
 

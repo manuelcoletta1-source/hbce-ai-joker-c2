@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   resolveSession:
     vi.fn(),
 
+  inspectRetentionEligibilityAsync:
+    vi.fn(),
+
   pruneStaleBucketsAsync:
     vi.fn()
 }));
@@ -51,6 +54,9 @@ vi.mock(
 
     getDefaultIprAuthRateLimitStore:
       () => ({
+        inspectRetentionEligibilityAsync:
+          mocks.inspectRetentionEligibilityAsync,
+
         pruneStaleBucketsAsync:
           mocks.pruneStaleBucketsAsync
       })
@@ -59,6 +65,7 @@ vi.mock(
 
 
 import {
+  GET,
   POST
 } from "./route";
 
@@ -183,6 +190,31 @@ function request(
 }
 
 
+function preflightRequest(
+  secret?: string
+): NextRequest {
+
+  const headers:
+    Record<string, string> = {};
+
+  if (secret !== undefined) {
+    headers[
+      "x-hbce-maintenance-secret"
+    ] = secret;
+  }
+
+  return new NextRequest(
+    "https://hbce.example/api/v1/runtime/maintenance/auth-rate-limit-retention",
+    {
+      method:
+        "GET",
+
+      headers
+    }
+  );
+}
+
+
 describe(
   "HBCE C5X-R2 auth rate limit retention maintenance",
   () => {
@@ -210,6 +242,302 @@ describe(
         ] = originalSecret;
       }
     });
+
+
+    it(
+      "requires authentication for retention preflight",
+      async () => {
+
+        mocks.resolveSession
+          .mockResolvedValue(
+            unauthenticatedResolution()
+          );
+
+        const response =
+          await GET(
+            preflightRequest(
+              VALID_SECRET
+            )
+          );
+
+        const body =
+          await response.json();
+
+        expect(
+          response.status
+        ).toBe(401);
+
+        expect(
+          body.reason
+        ).toBe(
+          "AUTHENTICATION_REQUIRED"
+        );
+
+        expect(
+          mocks.inspectRetentionEligibilityAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          mocks.pruneStaleBucketsAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          body.legalCertification
+        ).toBe(false);
+      }
+    );
+
+
+    it(
+      "fails closed when preflight maintenance authority is unavailable",
+      async () => {
+
+        mocks.resolveSession
+          .mockResolvedValue(
+            authenticatedResolution()
+          );
+
+        delete process.env[
+          ENV_NAME
+        ];
+
+        const response =
+          await GET(
+            preflightRequest()
+          );
+
+        const body =
+          await response.json();
+
+        expect(
+          response.status
+        ).toBe(503);
+
+        expect(
+          body.reason
+        ).toBe(
+          "MAINTENANCE_AUTHORITY_UNAVAILABLE"
+        );
+
+        expect(
+          mocks.inspectRetentionEligibilityAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          mocks.pruneStaleBucketsAsync
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+
+    it(
+      "rejects an invalid preflight maintenance secret",
+      async () => {
+
+        mocks.resolveSession
+          .mockResolvedValue(
+            authenticatedResolution()
+          );
+
+        const response =
+          await GET(
+            preflightRequest(
+              "WRONG-MAINTENANCE-SECRET"
+            )
+          );
+
+        const body =
+          await response.json();
+
+        expect(
+          response.status
+        ).toBe(403);
+
+        expect(
+          body.reason
+        ).toBe(
+          "MAINTENANCE_AUTHORITY_DENIED"
+        );
+
+        expect(
+          mocks.inspectRetentionEligibilityAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          mocks.pruneStaleBucketsAsync
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+
+    it(
+      "executes only read-only retention preflight",
+      async () => {
+
+        mocks.resolveSession
+          .mockResolvedValue(
+            authenticatedResolution()
+          );
+
+        mocks.inspectRetentionEligibilityAsync
+          .mockResolvedValue({
+            eligibleBuckets:
+              7,
+
+            staleAfterSeconds:
+              86400,
+
+            databaseReadOnly:
+              true,
+
+            legalCertification:
+              false
+          });
+
+        const response =
+          await GET(
+            preflightRequest(
+              VALID_SECRET
+            )
+          );
+
+        const body =
+          await response.json();
+
+        expect(
+          response.status
+        ).toBe(200);
+
+        expect(
+          body.ok
+        ).toBe(true);
+
+        expect(
+          body.status
+        ).toBe("PASS");
+
+        expect(
+          body.mode
+        ).toBe(
+          "AUTH_RATE_LIMIT_RETENTION_PREFLIGHT"
+        );
+
+        expect(
+          body.result.eligibleBuckets
+        ).toBe(7);
+
+        expect(
+          body.result.staleAfterSeconds
+        ).toBe(86400);
+
+        expect(
+          body.result.databaseReadOnly
+        ).toBe(true);
+
+        expect(
+          body.boundary.operation
+        ).toBe(
+          "INSPECT_STALE_AUTH_RATE_LIMIT_BUCKETS"
+        );
+
+        expect(
+          body.boundary.performsDatabaseRead
+        ).toBe(true);
+
+        expect(
+          body.boundary.performsDatabaseMutation
+        ).toBe(false);
+
+        expect(
+          body.boundary.performsSchemaMutation
+        ).toBe(false);
+
+        expect(
+          body.boundary.operationParameterized
+        ).toBe(false);
+
+        expect(
+          body.boundary.acceptsClientHumanIpr
+        ).toBe(false);
+
+        expect(
+          body.boundary.acceptsClientIp
+        ).toBe(false);
+
+        expect(
+          body.boundary.acceptsRetentionOverride
+        ).toBe(false);
+
+        expect(
+          mocks.inspectRetentionEligibilityAsync
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          mocks.inspectRetentionEligibilityAsync
+        ).toHaveBeenCalledWith();
+
+        expect(
+          mocks.pruneStaleBucketsAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          body.legalCertification
+        ).toBe(false);
+      }
+    );
+
+
+    it(
+      "fails closed without exposing preflight database errors",
+      async () => {
+
+        mocks.resolveSession
+          .mockResolvedValue(
+            authenticatedResolution()
+          );
+
+        mocks.inspectRetentionEligibilityAsync
+          .mockRejectedValue(
+            new Error(
+              "SECRET_PREFLIGHT_DATABASE_DETAIL"
+            )
+          );
+
+        const response =
+          await GET(
+            preflightRequest(
+              VALID_SECRET
+            )
+          );
+
+        const body =
+          await response.json();
+
+        expect(
+          response.status
+        ).toBe(503);
+
+        expect(
+          body.reason
+        ).toBe(
+          "AUTH_RATE_LIMIT_RETENTION_PREFLIGHT_FAILED"
+        );
+
+        expect(
+          JSON.stringify(body)
+        ).not.toContain(
+          "SECRET_PREFLIGHT_DATABASE_DETAIL"
+        );
+
+        expect(
+          mocks.pruneStaleBucketsAsync
+        ).not.toHaveBeenCalled();
+
+        expect(
+          body.legalCertification
+        ).toBe(false);
+      }
+    );
 
 
     it(

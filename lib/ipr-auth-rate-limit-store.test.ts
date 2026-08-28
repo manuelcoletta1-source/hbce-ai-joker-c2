@@ -607,6 +607,120 @@ describe(
 
 
     it(
+      "inspects retention eligibility without mutation",
+      async () => {
+        mockQueryWithoutSchemaInitialization
+          .mockResolvedValue(
+            databaseResult([
+              {
+                eligible_buckets: 7
+              }
+            ])
+          );
+
+        const store =
+          new PersistentIprAuthRateLimitStore();
+
+        const result =
+          await store
+            .inspectRetentionEligibilityAsync();
+
+        expect(
+          result
+        ).toEqual({
+          eligibleBuckets: 7,
+          staleAfterSeconds: 24 * 60 * 60,
+          databaseReadOnly: true,
+          legalCertification: false
+        });
+
+        expect(
+          mockQueryWithoutSchemaInitialization
+        ).toHaveBeenCalledTimes(1);
+
+        const [
+          sql,
+          parameters
+        ] =
+          mockQueryWithoutSchemaInitialization
+            .mock.calls[0];
+
+        expect(
+          sql
+        ).toContain(
+          "COUNT(*)::integer"
+        );
+
+        expect(
+          sql
+        ).toContain(
+          "updated_at <="
+        );
+
+        expect(
+          sql
+        ).toContain(
+          "blocked_until IS NULL"
+        );
+
+        expect(
+          sql
+        ).toContain(
+          "legal_certification = false"
+        );
+
+        expect(
+          sql
+        ).not.toContain(
+          "DELETE FROM"
+        );
+
+        expect(
+          parameters
+        ).toEqual([
+          24 * 60 * 60
+        ]);
+
+        expect(
+          mockTransaction
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+
+    it(
+      "fails closed when retention preflight read fails",
+      async () => {
+        mockQueryWithoutSchemaInitialization
+          .mockResolvedValue({
+            ok: false,
+            status: "UNAVAILABLE",
+            rows: [],
+            rowCount: 0,
+            error:
+              "HBCE_TEST_PREFLIGHT_FAILURE",
+            sqlHash: null,
+            durationMs: 0
+          });
+
+        const store =
+          new PersistentIprAuthRateLimitStore();
+
+        await expect(
+          store
+            .inspectRetentionEligibilityAsync()
+        ).rejects.toThrow(
+          "HBCE_TEST_PREFLIGHT_FAILURE"
+        );
+
+        expect(
+          mockTransaction
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+
+    it(
       "prunes only stale non-active buckets through explicit maintenance",
       async () => {
         const query =

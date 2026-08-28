@@ -31,6 +31,10 @@ export const revalidate =
 const REVISION =
   "HBCE-C5X-RATE-LIMIT-RETENTION-MAINTENANCE-v1_0";
 
+
+const PREFLIGHT_REVISION =
+  "HBCE-C5X-RATE-LIMIT-RETENTION-PREFLIGHT-v1_0";
+
 const MAINTENANCE_SECRET_HEADER =
   "x-hbce-maintenance-secret";
 
@@ -106,6 +110,246 @@ function maintenanceSecretsEqual(
     suppliedHash,
     expectedHash
   );
+}
+
+
+export async function GET(
+  request: NextRequest
+): Promise<NextResponse> {
+
+  const sessionResolution =
+    await resolveIprAccountSessionFromRequestAsync(
+      request
+    );
+
+  if (
+    !sessionResolution
+      .runtimeAuthorized
+  ) {
+    return NextResponse.json(
+      {
+        ok:
+          false,
+
+        reason:
+          "AUTHENTICATION_REQUIRED",
+
+        legalCertification:
+          false
+      },
+      {
+        status:
+          401,
+
+        headers:
+          noStoreHeaders()
+      }
+    );
+  }
+
+  const expectedSecret =
+    readMaintenanceSecret();
+
+  if (
+    Buffer.byteLength(
+      expectedSecret,
+      "utf8"
+    ) < MINIMUM_SECRET_BYTES
+  ) {
+    return NextResponse.json(
+      {
+        ok:
+          false,
+
+        reason:
+          "MAINTENANCE_AUTHORITY_UNAVAILABLE",
+
+        legalCertification:
+          false
+      },
+      {
+        status:
+          503,
+
+        headers:
+          noStoreHeaders()
+      }
+    );
+  }
+
+  const suppliedSecret =
+    (
+      request.headers.get(
+        MAINTENANCE_SECRET_HEADER
+      ) || ""
+    ).trim();
+
+  if (
+    !maintenanceSecretsEqual(
+      suppliedSecret,
+      expectedSecret
+    )
+  ) {
+    return NextResponse.json(
+      {
+        ok:
+          false,
+
+        reason:
+          "MAINTENANCE_AUTHORITY_DENIED",
+
+        legalCertification:
+          false
+      },
+      {
+        status:
+          403,
+
+        headers:
+          noStoreHeaders()
+      }
+    );
+  }
+
+  try {
+    const store =
+      getDefaultIprAuthRateLimitStore();
+
+    const result =
+      await store
+        .inspectRetentionEligibilityAsync();
+
+    return NextResponse.json(
+      {
+        ok:
+          true,
+
+        status:
+          "PASS",
+
+        mode:
+          "AUTH_RATE_LIMIT_RETENTION_PREFLIGHT",
+
+        revision:
+          PREFLIGHT_REVISION,
+
+        generatedAt:
+          new Date()
+            .toISOString(),
+
+        result: {
+          eligibleBuckets:
+            result.eligibleBuckets,
+
+          staleAfterSeconds:
+            result.staleAfterSeconds,
+
+          databaseReadOnly:
+            true,
+
+          legalCertification:
+            false
+        },
+
+        boundary: {
+          authenticatedSessionRequired:
+            true,
+
+          runtimeAuthorizationRequired:
+            true,
+
+          maintenanceSecretRequired:
+            true,
+
+          operation:
+            "INSPECT_STALE_AUTH_RATE_LIMIT_BUCKETS",
+
+          operationParameterized:
+            false,
+
+          acceptsClientHumanIpr:
+            false,
+
+          acceptsClientIp:
+            false,
+
+          acceptsRetentionOverride:
+            false,
+
+          performsDatabaseRead:
+            true,
+
+          performsDatabaseMutation:
+            false,
+
+          performsSchemaMutation:
+            false,
+
+          autoSchema:
+            "NO_AUTO_SCHEMA",
+
+          retentionPolicy:
+            IPR_AUTH_RATE_LIMIT_BOUNDARY
+              .retentionPolicy,
+
+          sessionCreated:
+            false,
+
+          runtimeAuthorizationChanged:
+            false,
+
+          credentialBypass:
+            false,
+
+          legalCertification:
+            false
+        },
+
+        legalCertification:
+          false
+      },
+      {
+        status:
+          200,
+
+        headers: {
+          ...noStoreHeaders(),
+
+          "X-HBCE-Maintenance-Mode":
+            "auth-rate-limit-retention-preflight",
+
+          "X-HBCE-Operational-Status":
+            "PASS"
+        }
+      }
+    );
+  } catch {
+    return NextResponse.json(
+      {
+        ok:
+          false,
+
+        status:
+          "FAIL",
+
+        mode:
+          "AUTH_RATE_LIMIT_RETENTION_PREFLIGHT",
+
+        reason:
+          "AUTH_RATE_LIMIT_RETENTION_PREFLIGHT_FAILED",
+
+        legalCertification:
+          false
+      },
+      {
+        status:
+          503,
+
+        headers:
+          noStoreHeaders()
+      }
+    );
+  }
 }
 
 
@@ -273,7 +517,7 @@ export async function POST(
             false,
 
           performsDatabaseRead:
-            false,
+            true,
 
           performsDatabaseMutation:
             true,
