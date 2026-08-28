@@ -13,6 +13,12 @@ import {
 } from "@/lib/ipr-auth-rate-limit-physical-proof";
 
 import {
+  IPR_AUTH_RATE_LIMIT_BOUNDARY,
+  getDefaultIprAuthRateLimitStore,
+  resolveIprAuthRateLimitClientIp
+} from "@/lib/ipr-auth-rate-limit-store";
+
+import {
   describeDefaultHbceDatabase,
   getHbceDatabaseBoundary,
   isHbceDatabaseConfigured,
@@ -502,6 +508,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     diagnosticMode === null ||
     diagnosticMode === "physical-schema-proof" ||
     diagnosticMode === "auth-rate-limit-physical-schema-proof" ||
+    diagnosticMode === "auth-rate-limit-runtime-proof" ||
     diagnosticMode === "auth-login-governance-proof";
 
   if (!diagnosticModeSupported) {
@@ -512,6 +519,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         supportedModes: [
           "physical-schema-proof",
           "auth-rate-limit-physical-schema-proof",
+          "auth-rate-limit-runtime-proof",
           "auth-login-governance-proof"
         ],
         legalCertification: false
@@ -688,6 +696,298 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
       }
     );
+  }
+
+  if (
+    diagnosticMode ===
+    "auth-rate-limit-runtime-proof"
+  ) {
+    /*
+     * C5X authenticated runtime proof.
+     *
+     * Scope:
+     * - current authenticated session only;
+     * - current request network source only;
+     * - persistent C5X bucket state read-only;
+     * - strict NO_AUTO_SCHEMA through the rate-limit store.
+     *
+     * Privacy:
+     * - no raw IP in response;
+     * - no Human IPR in response;
+     * - no HMAC bucket key in response;
+     * - no user-agent data in response.
+     *
+     * Authority:
+     * - cannot create sessions;
+     * - cannot modify rate-limit state;
+     * - cannot authorize runtime execution;
+     * - cannot bypass credentials.
+     */
+
+    const humanIpr =
+      sessionResolution.session?.humanIpr ||
+      sessionResolution.access.humanIpr ||
+      "";
+
+    if (!humanIpr) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode:
+            "AUTH_RATE_LIMIT_RUNTIME_PROOF",
+          reason:
+            "AUTHENTICATED_HUMAN_IPR_UNRESOLVED",
+          legalCertification: false
+        },
+        {
+          status: 409,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    const clientIp =
+      resolveIprAuthRateLimitClientIp(
+        request.headers
+      );
+
+    if (!clientIp) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode:
+            "AUTH_RATE_LIMIT_RUNTIME_PROOF",
+          reason:
+            "AUTH_RATE_LIMIT_CLIENT_IP_UNRESOLVED",
+          legalCertification: false
+        },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0"
+          }
+        }
+      );
+    }
+
+    try {
+      const store =
+        getDefaultIprAuthRateLimitStore();
+
+      const state =
+        await store.inspectAsync({
+          humanIpr,
+          clientIp
+        });
+
+      const serializeBucket = (
+        bucket:
+          typeof state.ip
+      ) => {
+        if (!bucket) {
+          return {
+            present: false,
+            failedAttempts: 0,
+            windowStartedAt: null,
+            lastFailedAt: null,
+            blockedUntil: null,
+            currentlyBlocked: false,
+            legalCertification: false
+          };
+        }
+
+        return {
+          present: true,
+          failedAttempts:
+            bucket.failedAttempts,
+          windowStartedAt:
+            bucket.windowStartedAt,
+          lastFailedAt:
+            bucket.lastFailedAt,
+          blockedUntil:
+            bucket.blockedUntil,
+          currentlyBlocked:
+            bucket.currentlyBlocked,
+          legalCertification: false
+        };
+      };
+
+      return NextResponse.json(
+        {
+          ok: true,
+          status: "PASS",
+          mode:
+            "AUTH_RATE_LIMIT_RUNTIME_PROOF",
+          revision:
+            "HBCE-AUTH-RATE-LIMIT-RUNTIME-PROOF-v1_0",
+          generatedAt:
+            new Date().toISOString(),
+
+          operationalState:
+            state.blocked
+              ? "THROTTLED"
+              : "AVAILABLE",
+
+          proof: {
+            blocked:
+              state.blocked,
+
+            blockedKinds:
+              state.blockedKinds,
+
+            blockedUntil:
+              state.blockedUntil,
+
+            globalIp:
+              serializeBucket(
+                state.ip
+              ),
+
+            authenticatedPair:
+              serializeBucket(
+                state.iprIp
+              ),
+
+            policy: {
+              globalIp:
+                IPR_AUTH_RATE_LIMIT_BOUNDARY
+                  .ipPolicy,
+
+              authenticatedPair:
+                IPR_AUTH_RATE_LIMIT_BOUNDARY
+                  .iprIpPolicy,
+
+              globalIpResetOnSuccessfulLogin:
+                false,
+
+              authenticatedPairResetOnSuccessfulLogin:
+                true
+            },
+
+            databaseReadOnly: true,
+            autoSchema:
+              "NO_AUTO_SCHEMA",
+            legalCertification: false
+          },
+
+          boundary: {
+            authority:
+              "AUTHENTICATED_C5X_RUNTIME_EVIDENCE_ONLY",
+
+            authenticatedSessionRequired:
+              true,
+
+            clientHumanIprAccepted:
+              false,
+
+            clientIpAcceptedFromBody:
+              false,
+
+            currentRequestNetworkSourceOnly:
+              true,
+
+            performsDatabaseRead:
+              true,
+
+            performsDatabaseMutation:
+              false,
+
+            performsSchemaMutation:
+              false,
+
+            rateLimitStateMutation:
+              false,
+
+            rawIpExposed:
+              false,
+
+            rawHumanIprExposed:
+              false,
+
+            bucketHashExposed:
+              false,
+
+            rawUserAgentExposed:
+              false,
+
+            credentialSecretsExposed:
+              false,
+
+            sessionCreated:
+              false,
+
+            runtimeAuthorizationChanged:
+              false,
+
+            credentialBypass:
+              false,
+
+            legalCertification:
+              false
+          },
+
+          legalCertification: false
+        },
+        {
+          status: 200,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+
+            "X-HBCE-Diagnostics-Mode":
+              "auth-rate-limit-runtime-proof",
+
+            "X-HBCE-Operational-Status":
+              "PASS"
+          }
+        }
+      );
+    } catch {
+      /*
+       * Fail closed.
+       *
+       * Do not expose database errors, HMAC secret status,
+       * bucket keys or internal derivation details.
+       */
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode:
+            "AUTH_RATE_LIMIT_RUNTIME_PROOF",
+          reason:
+            "AUTH_RATE_LIMIT_RUNTIME_PROOF_UNAVAILABLE",
+          legalCertification: false
+        },
+        {
+          status: 503,
+          headers: {
+            "Cache-Control":
+              "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+
+            "X-HBCE-Diagnostics-Mode":
+              "auth-rate-limit-runtime-proof",
+
+            "X-HBCE-Operational-Status":
+              "FAIL"
+          }
+        }
+      );
+    }
   }
 
   if (diagnosticMode === "auth-login-governance-proof") {
