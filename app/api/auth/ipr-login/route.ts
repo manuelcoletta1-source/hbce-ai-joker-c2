@@ -36,6 +36,11 @@ import {
   withHbceDatabaseTransaction
 } from "@/lib/ipr-database-transaction";
 
+import {
+  getDefaultIprAuthRateLimitStore,
+  resolveIprAuthRateLimitClientIp
+} from "@/lib/ipr-auth-rate-limit-store";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -1361,6 +1366,44 @@ async function handleLogin(
   humanIpr: string,
   password: string
 ) {
+  const clientIp =
+    resolveIprAuthRateLimitClientIp(
+      req.headers
+    );
+
+  if (!clientIp) {
+    return buildErrorResponse(
+      503,
+      "IPR_AUTH_RATE_LIMIT_UNAVAILABLE",
+      "Authentication rate-limit context could not be established."
+    );
+  }
+
+  const rateLimitStore =
+    getDefaultIprAuthRateLimitStore();
+
+  try {
+    const rateLimitState =
+      await rateLimitStore.inspectAsync({
+        humanIpr,
+        clientIp
+      });
+
+    if (rateLimitState.blocked) {
+      return buildErrorResponse(
+        429,
+        "IPR_AUTHENTICATION_THROTTLED",
+        "Authentication is temporarily unavailable for this request context."
+      );
+    }
+  } catch {
+    return buildErrorResponse(
+      503,
+      "IPR_AUTH_RATE_LIMIT_UNAVAILABLE",
+      "Authentication rate-limit governance is unavailable."
+    );
+  }
+
   const authStore = getDefaultIprAuthStore();
   const accountStore = getDefaultIprAccountStore();
 
@@ -1392,11 +1435,30 @@ async function handleLogin(
     !credential ||
     !verified
   ) {
-    await authStore.recordFailedLoginAttemptAsync({
-      humanIpr,
-      maxFailedAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
-      lockDurationSeconds: LOGIN_LOCK_DURATION_SECONDS
-    });
+    try {
+      /*
+       * C5X first:
+       * network abuse evidence is persisted even
+       * for unknown Human IPR values where C5W
+       * intentionally updates zero credential rows.
+       */
+      await rateLimitStore.recordFailureAsync({
+        humanIpr,
+        clientIp
+      });
+
+      await authStore.recordFailedLoginAttemptAsync({
+        humanIpr,
+        maxFailedAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+        lockDurationSeconds: LOGIN_LOCK_DURATION_SECONDS
+      });
+    } catch {
+      return buildErrorResponse(
+        503,
+        "IPR_AUTH_RATE_LIMIT_UNAVAILABLE",
+        "Authentication failure governance could not be completed."
+      );
+    }
 
     return buildErrorResponse(
       401,
@@ -1405,7 +1467,30 @@ async function handleLogin(
     );
   }
 
-  await authStore.resetLoginAttemptsAsync(humanIpr);
+  try {
+    await authStore.resetLoginAttemptsAsync(
+      humanIpr
+    );
+
+    /*
+     * A valid credential clears only the
+     * IPR × IP pair bucket.
+     *
+     * The global IP bucket intentionally survives
+     * so a valid credential cannot erase evidence
+     * of credential spraying from that source.
+     */
+    await rateLimitStore.resetIprIpAfterSuccessAsync({
+      humanIpr,
+      clientIp
+    });
+  } catch {
+    return buildErrorResponse(
+      503,
+      "IPR_AUTH_RATE_LIMIT_UNAVAILABLE",
+      "Authentication success governance could not be completed."
+    );
+  }
 
   const accountProfile = await accountStore.getProfileAsync(humanIpr);
 
