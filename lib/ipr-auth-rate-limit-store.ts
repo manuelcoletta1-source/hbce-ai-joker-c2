@@ -49,6 +49,17 @@ export const IPR_AUTH_RATE_LIMIT_BOUNDARY = {
     blockSeconds: 15 * 60
   },
 
+  retentionPolicy: {
+    staleAfterSeconds:
+      24 * 60 * 60,
+
+    automaticPruning:
+      false,
+
+    pruningMode:
+      "EXPLICIT_MAINTENANCE_ONLY"
+  },
+
   globalIpResetOnSuccessfulLogin:
     false,
 
@@ -119,6 +130,18 @@ export type IprAuthRateLimitBucketState = {
 
   currentlyBlocked:
     boolean;
+
+  legalCertification:
+    false;
+};
+
+
+export type IprAuthRateLimitPruneResult = {
+  deletedBuckets:
+    number;
+
+  staleAfterSeconds:
+    number;
 
   legalCertification:
     false;
@@ -839,6 +862,25 @@ function latestBlockedUntil(
 }
 
 
+const PRUNE_STALE_BUCKETS_SQL = `
+DELETE FROM ipr_auth_rate_limit_buckets
+WHERE
+  updated_at <=
+    now() -
+    (
+      $1::integer *
+      INTERVAL '1 second'
+    )
+  AND (
+    blocked_until IS NULL
+    OR blocked_until <= now()
+  )
+  AND legal_certification = false
+RETURNING
+  bucket_kind
+`.trim();
+
+
 export class PersistentIprAuthRateLimitStore {
 
   async inspectAsync(
@@ -1093,6 +1135,67 @@ export class PersistentIprAuthRateLimitStore {
 
     return outcome.value;
   }
+
+
+  async pruneStaleBucketsAsync():
+    Promise<IprAuthRateLimitPruneResult> {
+
+    const staleAfterSeconds =
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .retentionPolicy
+        .staleAfterSeconds;
+
+    const outcome =
+      await withHbceDatabaseTransaction(
+        async (
+          context
+        ) => {
+
+          const result =
+            await context.query(
+              PRUNE_STALE_BUCKETS_SQL,
+              [
+                staleAfterSeconds
+              ]
+            );
+
+          return {
+            deletedBuckets:
+              result.rows.length
+          };
+        },
+        {
+          isolationLevel:
+            "READ COMMITTED",
+
+          readOnly:
+            false,
+
+          statementTimeoutMs:
+            15_000,
+
+          lockTimeoutMs:
+            5_000
+        }
+      );
+
+    if (!outcome.ok) {
+      throw new Error(
+        outcome.error ||
+        "HBCE_AUTH_RATE_LIMIT_RETENTION_TRANSACTION_FAILED"
+      );
+    }
+
+    return {
+      deletedBuckets:
+        outcome.value.deletedBuckets,
+
+      staleAfterSeconds,
+
+      legalCertification:
+        false
+    };
+  }
 }
 
 
@@ -1150,6 +1253,10 @@ export function describeIprAuthRateLimitStore() {
     iprIpPolicy:
       IPR_AUTH_RATE_LIMIT_BOUNDARY
         .iprIpPolicy,
+
+    retentionPolicy:
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .retentionPolicy,
 
     rawIpPersistence:
       false,

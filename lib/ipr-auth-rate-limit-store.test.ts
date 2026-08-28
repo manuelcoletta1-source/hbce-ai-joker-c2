@@ -571,6 +571,223 @@ describe(
 
 
     it(
+      "declares explicit 24 hour retention without automatic pruning",
+      () => {
+        expect(
+          IPR_AUTH_RATE_LIMIT_BOUNDARY
+            .retentionPolicy
+            .staleAfterSeconds
+        ).toBe(
+          24 * 60 * 60
+        );
+
+        expect(
+          IPR_AUTH_RATE_LIMIT_BOUNDARY
+            .retentionPolicy
+            .automaticPruning
+        ).toBe(false);
+
+        expect(
+          IPR_AUTH_RATE_LIMIT_BOUNDARY
+            .retentionPolicy
+            .pruningMode
+        ).toBe(
+          "EXPLICIT_MAINTENANCE_ONLY"
+        );
+
+        expect(
+          describeIprAuthRateLimitStore()
+            .retentionPolicy
+        ).toEqual(
+          IPR_AUTH_RATE_LIMIT_BOUNDARY
+            .retentionPolicy
+        );
+      }
+    );
+
+
+    it(
+      "prunes only stale non-active buckets through explicit maintenance",
+      async () => {
+        const query =
+          vi.fn(
+            async (
+              sql: string,
+              parameters:
+                readonly unknown[] = []
+            ) => {
+              expect(
+                sql
+              ).toContain(
+                "DELETE FROM ipr_auth_rate_limit_buckets"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "updated_at <="
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "blocked_until IS NULL"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "blocked_until <= now()"
+              );
+
+              expect(
+                sql
+              ).toContain(
+                "legal_certification = false"
+              );
+
+              expect(
+                parameters
+              ).toEqual([
+                24 * 60 * 60
+              ]);
+
+              return {
+                rows: [
+                  {
+                    bucket_kind:
+                      "IP"
+                  },
+                  {
+                    bucket_kind:
+                      "IPR_IP"
+                  }
+                ]
+              };
+            }
+          );
+
+        mockTransaction
+          .mockImplementation(
+            async (
+              operation:
+                (
+                  context: {
+                    query:
+                      typeof query;
+                    transactionId:
+                      string;
+                    startedAt:
+                      string;
+                  }
+                ) =>
+                  Promise<unknown>
+            ) => {
+              const value =
+                await operation({
+                  query,
+                  transactionId:
+                    "HBCE-C5X-RETENTION-TX",
+                  startedAt:
+                    "2026-08-28T12:00:00.000Z"
+                });
+
+              return {
+                ok: true,
+                transactionId:
+                  "HBCE-C5X-RETENTION-TX",
+                state:
+                  "COMMITTED",
+                startedAt:
+                  "2026-08-28T12:00:00.000Z",
+                completedAt:
+                  "2026-08-28T12:00:01.000Z",
+                durationMs:
+                  1,
+                value
+              };
+            }
+          );
+
+        const store =
+          new PersistentIprAuthRateLimitStore();
+
+        const result =
+          await store
+            .pruneStaleBucketsAsync();
+
+        expect(
+          mockTransaction
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          query
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          mockTransaction
+            .mock.calls[0]![1]
+        ).toMatchObject({
+          isolationLevel:
+            "READ COMMITTED",
+          readOnly:
+            false,
+          statementTimeoutMs:
+            15_000,
+          lockTimeoutMs:
+            5_000
+        });
+
+        expect(
+          result.deletedBuckets
+        ).toBe(2);
+
+        expect(
+          result.staleAfterSeconds
+        ).toBe(
+          24 * 60 * 60
+        );
+
+        expect(
+          result.legalCertification
+        ).toBe(false);
+      }
+    );
+
+
+    it(
+      "fails closed when retention transaction fails",
+      async () => {
+        mockTransaction
+          .mockResolvedValue({
+            ok: false,
+            transactionId:
+              "HBCE-C5X-RETENTION-FAIL-TX",
+            state:
+              "ROLLED_BACK",
+            startedAt:
+              "2026-08-28T12:00:00.000Z",
+            completedAt:
+              "2026-08-28T12:00:01.000Z",
+            durationMs:
+              1,
+            error:
+              "RETENTION_DATABASE_FAILURE"
+          });
+
+        const store =
+          new PersistentIprAuthRateLimitStore();
+
+        await expect(
+          store.pruneStaleBucketsAsync()
+        ).rejects.toThrow(
+          "RETENTION_DATABASE_FAILURE"
+        );
+      }
+    );
+
+
+    it(
       "reports secret configuration without exposing the secret",
       () => {
         const description =
