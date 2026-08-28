@@ -60,6 +60,42 @@ function queryFailure(
 }
 
 
+function postgresCatalogIdentifier(
+  value: string
+): string {
+  const maxBytes = 63;
+
+  if (
+    Buffer.byteLength(
+      value,
+      "utf8"
+    ) <= maxBytes
+  ) {
+    return value;
+  }
+
+  let normalized = "";
+
+  for (const character of value) {
+    const candidate =
+      `${normalized}${character}`;
+
+    if (
+      Buffer.byteLength(
+        candidate,
+        "utf8"
+      ) > maxBytes
+    ) {
+      break;
+    }
+
+    normalized = candidate;
+  }
+
+  return normalized;
+}
+
+
 const CONSTRAINTS = [
   {
     constraint_name:
@@ -187,7 +223,15 @@ const CONSTRAINTS = [
     definition:
       "CHECK (legal_certification = false)"
   }
-];
+].map(
+  (constraint) => ({
+    ...constraint,
+    constraint_name:
+      postgresCatalogIdentifier(
+        constraint.constraint_name
+      )
+  })
+);
 
 
 function installHappyPath(): void {
