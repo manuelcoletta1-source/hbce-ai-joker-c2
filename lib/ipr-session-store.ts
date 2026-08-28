@@ -151,6 +151,17 @@ export type IprSessionLookupResult =
       session: IprAuthStoredSession | null;
     };
 
+export type IprAuthRecoveryProcessFallbackSyncResult = {
+  humanIpr: string;
+  credentialReplaced: true;
+  revokedSessions: number;
+  databaseWritePerformed: false;
+  sessionCreationAuthority: false;
+  runtimeAuthorizationAuthority: false;
+  legalCertification: false;
+};
+
+
 export type IprAuthStoreDescription = {
   name: string;
   kind: IprAuthStoreKind;
@@ -846,6 +857,65 @@ class ProcessIprAuthStore implements IprAuthStoreAdapter {
 
     return revokedSession;
   }
+
+  revokeSubjectSessions(
+    humanIpr: string
+  ): number {
+    const normalizedHumanIpr =
+      normalizeHumanIpr(
+        humanIpr
+      );
+
+    if (!normalizedHumanIpr) {
+      throw new Error(
+        "IPR_AUTH_RECOVERY_HUMAN_IPR_REQUIRED"
+      );
+    }
+
+    const revokedAt =
+      nowIso();
+
+    let revokedSessions =
+      0;
+
+    for (
+      const [
+        sessionId,
+        session
+      ] of this.sessions.entries()
+    ) {
+      if (
+        session.humanIpr !==
+          normalizedHumanIpr
+      ) {
+        continue;
+      }
+
+      if (
+        session.status !==
+          "ACTIVE" ||
+        session.revokedAt
+      ) {
+        continue;
+      }
+
+      this.sessions.set(
+        sessionId,
+        {
+          ...session,
+          status:
+            "REVOKED",
+          revokedAt
+        }
+      );
+
+      revokedSessions +=
+        1;
+    }
+
+    return revokedSessions;
+  }
+
 
   async getCredentialAsync(
     humanIpr: string
@@ -1999,6 +2069,76 @@ export function getPublicSessionFromStoredSession(
     legalCertification: false
   };
 }
+
+export function synchronizeIprAuthRecoveryProcessFallback(
+  credential: IprAuthStoredCredential
+): IprAuthRecoveryProcessFallbackSyncResult {
+  if (
+    credential.legalCertification !==
+      false
+  ) {
+    throw new Error(
+      "IPR_AUTH_RECOVERY_LEGAL_CERTIFICATION_BOUNDARY_VIOLATED"
+    );
+  }
+
+  const humanIpr =
+    normalizeHumanIpr(
+      credential.humanIpr
+    );
+
+  if (!humanIpr) {
+    throw new Error(
+      "IPR_AUTH_RECOVERY_HUMAN_IPR_REQUIRED"
+    );
+  }
+
+  if (
+    credential.failedAttempts !==
+      0 ||
+    credential.lockedUntil !==
+      null
+  ) {
+    throw new Error(
+      "IPR_AUTH_RECOVERY_CREDENTIAL_STATE_INVALID"
+    );
+  }
+
+  const store =
+    getProcessIprAuthStore();
+
+  store.replaceCredential({
+    ...credential,
+    humanIpr,
+    failedAttempts:
+      0,
+    lockedUntil:
+      null,
+    legalCertification:
+      false
+  });
+
+  const revokedSessions =
+    store.revokeSubjectSessions(
+      humanIpr
+    );
+
+  return {
+    humanIpr,
+    credentialReplaced:
+      true,
+    revokedSessions,
+    databaseWritePerformed:
+      false,
+    sessionCreationAuthority:
+      false,
+    runtimeAuthorizationAuthority:
+      false,
+    legalCertification:
+      false
+  };
+}
+
 
 export function clearProcessIprAuthStore(): void {
   getProcessIprAuthStore().clear();
