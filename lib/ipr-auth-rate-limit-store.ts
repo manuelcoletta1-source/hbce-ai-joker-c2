@@ -49,6 +49,18 @@ export const IPR_AUTH_RATE_LIMIT_BOUNDARY = {
     blockSeconds: 15 * 60
   },
 
+  passwordRecoveryKeyDomain:
+    "HBCE_C5X_PASSWORD_RECOVERY",
+
+  passwordRecoveryBucketsShareLoginKeys:
+    false,
+
+  passwordRecoveryPolicy:
+    "SAME_THRESHOLDS_SEPARATE_KEYS",
+
+  passwordRecoveryResetOnSuccess:
+    false,
+
   retentionPolicy: {
     staleAfterSeconds:
       24 * 60 * 60,
@@ -351,7 +363,10 @@ function deriveBucketKeys(
   input: {
     humanIpr: string;
     clientIp: string;
-  }
+  },
+  keyDomain:
+    string =
+      "HBCE_C5X"
 ): BucketKeys {
 
   const humanIpr =
@@ -380,7 +395,7 @@ function deriveBucketKeys(
     ip:
       hmacBucketKey(
         [
-          "HBCE_C5X",
+          keyDomain,
           "IP",
           clientIp
         ].join("\0")
@@ -389,7 +404,7 @@ function deriveBucketKeys(
     iprIp:
       hmacBucketKey(
         [
-          "HBCE_C5X",
+          keyDomain,
           "IPR_IP",
           humanIpr,
           clientIp
@@ -1006,6 +1021,79 @@ export class PersistentIprAuthRateLimitStore {
   }
 
 
+  async inspectPasswordRecoveryAsync(
+    input: {
+      humanIpr: string;
+      clientIp: string;
+    }
+  ): Promise<
+    IprAuthRateLimitRequestState
+  > {
+
+    const keys =
+      deriveBucketKeys(
+        input,
+        IPR_AUTH_RATE_LIMIT_BOUNDARY
+          .passwordRecoveryKeyDomain
+      );
+
+    const [
+      ip,
+      iprIp
+    ] =
+      await Promise.all([
+        readBucket(
+          keys.ip,
+          "IP"
+        ),
+
+        readBucket(
+          keys.iprIp,
+          "IPR_IP"
+        )
+      ]);
+
+    const blockedKinds:
+      IprAuthRateLimitBucketKind[] =
+      [];
+
+    if (ip?.currentlyBlocked) {
+      blockedKinds.push(
+        "IP"
+      );
+    }
+
+    if (
+      iprIp?.currentlyBlocked
+    ) {
+      blockedKinds.push(
+        "IPR_IP"
+      );
+    }
+
+    return {
+      blocked:
+        blockedKinds.length > 0,
+
+      blockedKinds,
+
+      blockedUntil:
+        latestBlockedUntil([
+          ip,
+          iprIp
+        ]),
+
+      ip,
+
+      iprIp,
+
+      legalCertification:
+        false
+    };
+  }
+
+
+
   async recordFailureAsync(
     input: {
       humanIpr: string;
@@ -1119,6 +1207,122 @@ export class PersistentIprAuthRateLimitStore {
         false
     };
   }
+
+
+  async recordPasswordRecoveryFailureAsync(
+    input: {
+      humanIpr: string;
+      clientIp: string;
+    }
+  ): Promise<
+    IprAuthRateLimitRequestState
+  > {
+
+    const keys =
+      deriveBucketKeys(
+        input,
+        IPR_AUTH_RATE_LIMIT_BOUNDARY
+          .passwordRecoveryKeyDomain
+      );
+
+    const outcome =
+      await withHbceDatabaseTransaction(
+        async (
+          context
+        ) => {
+
+          /*
+           * Recovery uses a separate HMAC key namespace
+           * while preserving the existing fixed lock order:
+           * IP first, then IPR_IP.
+           */
+
+          const ip =
+            await recordBucketFailure(
+              context,
+              keys.ip,
+              "IP"
+            );
+
+          const iprIp =
+            await recordBucketFailure(
+              context,
+              keys.iprIp,
+              "IPR_IP"
+            );
+
+          return {
+            ip,
+            iprIp
+          };
+        },
+        {
+          isolationLevel:
+            "READ COMMITTED",
+
+          readOnly:
+            false,
+
+          statementTimeoutMs:
+            15_000,
+
+          lockTimeoutMs:
+            5_000
+        }
+      );
+
+    if (!outcome.ok) {
+      throw new Error(
+        outcome.error ||
+        "HBCE_PASSWORD_RECOVERY_RATE_LIMIT_FAILURE_TRANSACTION_FAILED"
+      );
+    }
+
+    const {
+      ip,
+      iprIp
+    } =
+      outcome.value;
+
+    const blockedKinds:
+      IprAuthRateLimitBucketKind[] =
+      [];
+
+    if (ip.currentlyBlocked) {
+      blockedKinds.push(
+        "IP"
+      );
+    }
+
+    if (
+      iprIp.currentlyBlocked
+    ) {
+      blockedKinds.push(
+        "IPR_IP"
+      );
+    }
+
+    return {
+      blocked:
+        blockedKinds.length > 0,
+
+      blockedKinds,
+
+      blockedUntil:
+        latestBlockedUntil([
+          ip,
+          iprIp
+        ]),
+
+      ip,
+
+      iprIp,
+
+      legalCertification:
+        false
+    };
+  }
+
 
 
   async resetIprIpAfterSuccessAsync(
@@ -1360,6 +1564,20 @@ export function describeIprAuthRateLimitStore() {
     iprIpPolicy:
       IPR_AUTH_RATE_LIMIT_BOUNDARY
         .iprIpPolicy,
+
+    passwordRecoveryKeyDomain:
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .passwordRecoveryKeyDomain,
+
+    passwordRecoveryBucketsShareLoginKeys:
+      false,
+
+    passwordRecoveryPolicy:
+      IPR_AUTH_RATE_LIMIT_BOUNDARY
+        .passwordRecoveryPolicy,
+
+    passwordRecoveryResetOnSuccess:
+      false,
 
     retentionPolicy:
       IPR_AUTH_RATE_LIMIT_BOUNDARY
