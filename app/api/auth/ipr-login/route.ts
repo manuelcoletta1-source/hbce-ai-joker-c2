@@ -1208,157 +1208,18 @@ RETURNING human_ipr
 }
 
 async function handleSetPassword(
-  req: NextRequest,
-  body: JsonRecord,
-  humanIpr: string,
-  password: string
+  _req: NextRequest,
+  _body: JsonRecord,
+  _humanIpr: string,
+  _password: string
 ) {
-  const handoff = evaluateMinimalIprHandoff(
-    body.iprHandoff || body.handoff || body.ipr_handoff,
-    humanIpr
+  return buildErrorResponse(
+    503,
+    "IPR_PASSWORD_ROTATION_DISABLED",
+    "Password rotation is temporarily disabled until server-verified recovery authority is enforced."
   );
-
-  if (!handoff.ok) {
-    return buildErrorResponse(403, handoff.reason, handoff.detail);
-  }
-
-  const passwordPolicy = normalizePolicyResult(
-    evaluateIprPasswordPolicy(password)
-  );
-
-  if (!passwordPolicy.ok) {
-    return buildErrorResponse(
-      400,
-      "IPR_PASSWORD_POLICY_FAILED",
-      "The supplied password does not satisfy the HBCE IPR password policy.",
-      {
-        passwordPolicy
-      }
-    );
-  }
-
-  const authStore = getDefaultIprAuthStore();
-  const accountStore = getDefaultIprAccountStore();
-  const passwordHash = hashPasswordLocally(password);
-
-  await authStore.setCredentialAsync({
-    humanIpr,
-    passwordAlgorithm: passwordHash.passwordAlgorithm,
-    passwordHash: passwordHash.passwordHash,
-    passwordSalt: passwordHash.passwordSalt,
-    passwordKeyLength: passwordHash.passwordKeyLength,
-    credentialPayload: {
-      source: "IPR_LOGIN_SET_PASSWORD",
-      origin: getRequestOrigin(req),
-      createdAt: nowIso(),
-      algorithm: PASSWORD_ALGORITHM,
-      legalCertification: false
-    }
-  });
-
-  const accountProfile = await accountStore.upsertProfileAsync({
-    humanIpr,
-    entity: handoff.entity,
-    subjectKind: "BIOLOGICAL_SUBJECT",
-    certificateId: handoff.certificateId,
-    certificateKind: handoff.certificateKind,
-    certificateStatus: handoff.certificateStatus,
-    certificateScope: handoff.certificateScope,
-    cardSerial: handoff.cardSerial,
-    certificateHash: handoff.certificateHash,
-    accessDecision: handoff.accessDecision,
-    accessScope: handoff.accessScope,
-    identityBinding: handoff.identityBinding,
-    matrixState: handoff.matrixState,
-    semanticMemoryScope: handoff.semanticMemoryScope,
-    source: handoff.source,
-    handoffHash: handoff.handoffHash,
-    profilePayload: {
-      source: "IPR_LOGIN_SET_PASSWORD",
-      origin: getRequestOrigin(req),
-      handoffReason: handoff.reason,
-      legalCertification: false
-    }
-  });
-
-  const touchedProfile =
-    (await accountStore.touchLoginAsync(humanIpr)) || accountProfile;
-
-  const authorized = hasCompleteJokerAuthority(touchedProfile);
-
-  const session = await createAuthenticatedSession({
-    req,
-    humanIpr,
-    runtimeIpr: DEFAULT_RUNTIME_IPR,
-    deviceLabel: firstString(
-      body,
-      [["deviceLabel"], ["device_label"]],
-      "JOKER-C2 access device"
-    ),
-    sessionPayload: {
-      mode: "SET_PASSWORD",
-      accountId: touchedProfile.accountId,
-      profileHash: touchedProfile.profileHash,
-      semanticMemoryScope: authorized
-        ? touchedProfile.semanticMemoryScope
-        : "RUNTIME_ONLY",
-      matrixState: authorized
-        ? touchedProfile.matrixState
-        : "MATRIX_LIMITED",
-      authorized,
-      legalCertification: false
-    }
-  });
-
-  const response = NextResponse.json(
-    {
-      ok: true,
-      authenticated: true,
-      authorized,
-      mode: "SET_PASSWORD",
-      humanIpr,
-      runtimeIpr: DEFAULT_RUNTIME_IPR,
-      session: getPublicSessionFromStoredSession(session.storedSession),
-      accountProfile: toPublicIprAccountProfile(touchedProfile),
-      access: {
-        decision: authorized
-          ? "ACCESS_GRANTED"
-          : "AUTHENTICATION_REQUIRED",
-        scope: authorized
-          ? touchedProfile.accessScope
-          : "NO_ACCESS_SCOPE",
-        identityBinding: touchedProfile.identityBinding,
-        source: "IPR_ACCOUNT_SESSION_CREATED"
-      },
-      memory: {
-        expectedScope: authorized
-          ? touchedProfile.semanticMemoryScope
-          : "RUNTIME_ONLY",
-        expectedAuthority: authorized
-          ? "SERVER_RUNTIME_VALIDATED"
-          : "SESSION_RUNTIME_ONLY",
-        persistenceMode: "DATABASE_PERSISTENT"
-      },
-      matrix: {
-        expectedState: authorized
-          ? touchedProfile.matrixState
-          : "MATRIX_LIMITED",
-        active: authorized
-      },
-      stores: {
-        auth: describeDefaultIprAuthStore(),
-        account: describeDefaultIprAccountStore()
-      },
-      boundary: buildBoundary(),
-      legalCertification: false
-    },
-    { status: 200 }
-  );
-
-  setSessionCookie(response, session.rawSessionToken);
-
-  return response;
 }
+
 
 async function handleLogin(
   req: NextRequest,
@@ -1587,7 +1448,8 @@ export async function GET() {
       ok: true,
       route: "/api/auth/ipr-login",
       runtime: "nodejs",
-      modes: ["SET_PASSWORD", "LOGIN"],
+      modes: ["LOGIN"],
+      disabledModes: ["SET_PASSWORD"],
       cookieName: IPR_AUTH_COOKIE_NAME,
       authStore: describeDefaultIprAuthStore(),
       accountStore: describeDefaultIprAccountStore(),
@@ -1598,7 +1460,7 @@ export async function GET() {
       },
       flow: {
         setPassword:
-          "Human IPR + password + valid HBCE IPR handoff creates credential, persistent account profile and server-side IPR session.",
+          "DISABLED_FAIL_CLOSED_PENDING_SERVER_VERIFIED_RECOVERY_AUTHORITY",
         login:
           "Human IPR + password verifies persistent credential and creates server-side IPR session cookie."
       },

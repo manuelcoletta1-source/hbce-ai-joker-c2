@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { getProcessIprAuthStore } from "@/lib/ipr-session-store";
 import { getProcessIprAccountStore } from "@/lib/ipr-account-store";
 
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const AUTH_STORE_KIND_ENV =
   "IPR_AUTH_STORE_KIND";
@@ -504,4 +504,181 @@ describe("POST /api/auth/ipr-login canonical bootstrap", () => {
     });
   });
 
+});
+
+
+describe("HBCE password rotation containment", () => {
+  it("publishes SET_PASSWORD as disabled fail-closed", async () => {
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+
+    expect(payload.modes).toEqual([
+      "LOGIN"
+    ]);
+
+    expect(payload.disabledModes).toEqual([
+      "SET_PASSWORD"
+    ]);
+
+    expect(
+      payload.flow.setPassword
+    ).toBe(
+      "DISABLED_FAIL_CLOSED_PENDING_SERVER_VERIFIED_RECOVERY_AUTHORITY"
+    );
+
+    expect(
+      payload.legalCertification
+    ).toBe(false);
+  });
+
+  it(
+    "rejects client-crafted SET_PASSWORD without mutating the existing credential",
+    async () => {
+      process.env[AUTH_STORE_KIND_ENV] =
+        "PROCESS_AUTH_STORE_MVP";
+
+      process.env[ACCOUNT_STORE_KIND_ENV] =
+        "PROCESS_ACCOUNT_STORE_MVP";
+
+      const authStore =
+        getProcessIprAuthStore();
+
+      authStore.clear();
+
+      await authStore.setCredentialAsync({
+        humanIpr: "IPR-3",
+        passwordAlgorithm:
+          "test-existing-credential-v1",
+        passwordHash:
+          "existing-hash",
+        passwordSalt:
+          "existing-salt",
+        passwordKeyLength:
+          64,
+        credentialPayload: {
+          source:
+            "HBCE_TEST_EXISTING_CREDENTIAL"
+        }
+      });
+
+      const before =
+        await authStore.getCredentialAsync(
+          "IPR-3"
+        );
+
+      expect(before).not.toBeNull();
+
+      const request = new NextRequest(
+        "http://localhost/api/auth/ipr-login",
+        {
+          method: "POST",
+          headers: {
+            "content-type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            mode: "SET_PASSWORD",
+            humanIpr: "IPR-3",
+            password:
+              "Attacker-Chosen-Password-2026!",
+            iprHandoff: {
+              subject: {
+                ipr: "IPR-3",
+                entity:
+                  "CLIENT_ASSERTED_ENTITY"
+              },
+              certificate: {
+                certificateId:
+                  "CLIENT_ASSERTED_CERTIFICATE",
+                certificateStatus:
+                  "ACTIVE",
+                certificateScope: [
+                  "JOKER_C2_ACCESS"
+                ]
+              },
+              access: {
+                scope:
+                  "JOKER_C2_ACCESS",
+                decision:
+                  "ACCESS_GRANTED",
+                identityBinding:
+                  "IPR_VERIFIED_BIOLOGICAL_SUBJECT"
+              },
+              matrix: {
+                state:
+                  "MATRIX_ACTIVE"
+              },
+              memory: {
+                semanticMemoryScope:
+                  "IPR_BOUND"
+              },
+              source:
+                "CLIENT_ASSERTED_HANDOFF"
+            }
+          })
+        }
+      );
+
+      const response =
+        await POST(request);
+
+      const payload =
+        await response.json();
+
+      expect(response.status).toBe(503);
+
+      expect(payload).toMatchObject({
+        ok: false,
+        authenticated: false,
+        reason:
+          "IPR_PASSWORD_ROTATION_DISABLED",
+        legalCertification: false
+      });
+
+      expect(
+        response.headers.get(
+          "set-cookie"
+        )
+      ).toBeNull();
+
+      const after =
+        await authStore.getCredentialAsync(
+          "IPR-3"
+        );
+
+      expect(after).not.toBeNull();
+
+      expect(
+        after?.passwordAlgorithm
+      ).toBe(
+        before?.passwordAlgorithm
+      );
+
+      expect(
+        after?.passwordHash
+      ).toBe(
+        before?.passwordHash
+      );
+
+      expect(
+        after?.passwordSalt
+      ).toBe(
+        before?.passwordSalt
+      );
+
+      expect(
+        after?.failedAttempts
+      ).toBe(
+        before?.failedAttempts
+      );
+
+      expect(
+        after?.lockedUntil
+      ).toBe(
+        before?.lockedUntil
+      );
+    }
+  );
 });
