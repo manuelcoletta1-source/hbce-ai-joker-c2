@@ -292,7 +292,7 @@ export async function hashIprPassword(
   const createdAt = nowIso(input.now);
   const passwordSalt = randomBytes(IPR_AUTH_PASSWORD_SALT_BYTES).toString("hex");
   const key = await scryptAsync(
-    `${humanIpr}:${input.password}`,
+    input.password,
     passwordSalt,
     IPR_AUTH_PASSWORD_KEY_LENGTH
   );
@@ -358,7 +358,7 @@ export async function verifyIprPassword(
   }
 
   const key = await scryptAsync(
-    `${humanIpr}:${input.password}`,
+    input.password,
     input.credential.passwordSalt,
     input.credential.passwordKeyLength
   );
