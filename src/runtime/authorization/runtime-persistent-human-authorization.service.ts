@@ -10,12 +10,16 @@ import {
   queryHbceDatabase
 } from "@/lib/ipr-database";
 
+import {
+  HBCE_SELF_PILOT_HUMAN_IPR
+} from "@/lib/ipr-database-schema";
+
 import type {
   RuntimeOperationsPersistentAppendAuthorization
 } from "@/src/runtime/operations/runtime-operations-persistent-append.service";
 
 export const RUNTIME_PERSISTENT_HUMAN_AUTHORIZATION_SERVICE_REVISION =
-  "HBCE-RUNTIME-PERSISTENT-HUMAN-AUTHORIZATION-SERVICE-v1_0" as const;
+  "HBCE-RUNTIME-PERSISTENT-HUMAN-AUTHORIZATION-SERVICE-v1_1" as const;
 
 export const RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR_ENV =
   "HBCE_RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR" as const;
@@ -67,6 +71,7 @@ export type RuntimePersistentHumanAuthorizationErrorCode =
   | "HBCE_RUNTIME_AUTH_DATABASE_NOT_CONFIGURED"
   | "HBCE_RUNTIME_AUTH_SESSION_TOKEN_REQUIRED"
   | "HBCE_RUNTIME_AUTH_CANONICAL_SUBJECT_NOT_CONFIGURED"
+  | "HBCE_RUNTIME_AUTH_CANONICAL_SUBJECT_MISCONFIGURED"
   | "HBCE_RUNTIME_AUTH_SESSION_DATABASE_QUERY_FAILED"
   | "HBCE_RUNTIME_AUTH_SESSION_NOT_FOUND"
   | "HBCE_RUNTIME_AUTH_SESSION_NOT_ACTIVE"
@@ -260,11 +265,33 @@ function requireCanonicalHumanSubjectIpr():
       stage:
         "CONFIGURATION",
       message:
-        `${RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR_ENV} must bind the authenticated operational Human IPR to canonical authority ${CANONICAL_HUMAN_AUTHORITY_IPR}.`
+        `${RUNTIME_CANONICAL_HUMAN_SUBJECT_IPR_ENV} must configure the canonical operational Human subject.`
     });
   }
 
-  return normalized;
+  if (
+    normalized !==
+    HBCE_SELF_PILOT_HUMAN_IPR
+  ) {
+    fail({
+      code:
+        "HBCE_RUNTIME_AUTH_CANONICAL_SUBJECT_MISCONFIGURED",
+      stage:
+        "CONFIGURATION",
+      message:
+        "Configured operational Human subject does not match the canonical HBCE self-pilot Human IPR. Human subject and HBCE authority are distinct bindings.",
+      causeValue: {
+        expectedHumanSubjectIpr:
+          HBCE_SELF_PILOT_HUMAN_IPR,
+        actualHumanSubjectIpr:
+          normalized,
+        humanAuthorityIpr:
+          CANONICAL_HUMAN_AUTHORITY_IPR
+      }
+    });
+  }
+
+  return HBCE_SELF_PILOT_HUMAN_IPR;
 }
 
 function isExpired(
@@ -475,7 +502,7 @@ LIMIT 1
       stage:
         "SESSION_VALIDATION",
       message:
-        "Authenticated Human IPR is not the operational subject bound to canonical authority IPR-3."
+        "Authenticated Human IPR does not match the canonical operational Human subject bound to the HBCE authority."
     });
   }
 
