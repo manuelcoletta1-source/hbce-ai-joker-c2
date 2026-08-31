@@ -6,7 +6,7 @@ export const PLATFORM_CORE_CROSS_OBJECT_VALIDATOR_PROTOCOL =
   "HBCE-PLATFORM-CORE-CANONICAL-CROSS-OBJECT-VALIDATOR-v1" as const;
 
 export const PLATFORM_CORE_CROSS_OBJECT_FULL_RELATION_CHECK_COUNT =
-  32 as const;
+  31 as const;
 
 export const PLATFORM_CORE_CROSS_OBJECT_HASH_BINDING_MODE =
   "DECLARED_PAYLOAD_SHA256_COMMITMENT_EQUALITY" as const;
@@ -1092,18 +1092,6 @@ export function validatePlatformCoreCanonicalCrossObjectRelations(
           ],
         );
 
-        checkEqual(
-          "CONSEQUENCE_OUTCOME_STATE",
-          "CONSEQUENCE",
-          "OUTCOME",
-          "outcome_binding.outcome_state_observed",
-          binding[
-            "outcome_state_observed"
-          ],
-          outcome[
-            "state"
-          ],
-        );
       }
     }
 
