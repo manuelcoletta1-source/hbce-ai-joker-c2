@@ -1,0 +1,1006 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-feedback.schema.json",
+  "title": "HBCE Platform Core Feedback Schema v1",
+  "description": "Canonical HBCE Platform Core FEEDBACK object. FEEDBACK represents minimized information derived from an observed OUTCOME, a CONSEQUENCE, or a MATRIX state-transition representation that may influence a subsequent governed policy, capability, authority, authorization, prediction or execution process. FEEDBACK is information, not a command, decision, authorization or execution, and must never retroactively rewrite historical acts, evidence or state representations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "feedback_id",
+    "feedback_version",
+    "state",
+    "derived_at",
+    "source_bindings",
+    "derivation",
+    "signal",
+    "influence_targets",
+    "review",
+    "evidence_state",
+    "evidence_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-FEEDBACK-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_FEEDBACK"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "feedback_id": {
+      "type": "string",
+      "pattern": "^FBK-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "feedback_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "GENERATED",
+        "REVIEWED",
+        "CONTESTED",
+        "UNKNOWN"
+      ],
+      "description": "Lifecycle/evaluation state of the feedback representation. GENERATED means a feedback signal has been derived. REVIEWED means it has been reviewed but does not mean accepted, authorized or applied. CONTESTED means its interpretation is disputed. No FEEDBACK state constitutes authorization or execution."
+    },
+    "derived_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Timestamp at which the feedback derivation was established. PENDING requires null. GENERATED, REVIEWED, CONTESTED and UNKNOWN represent an attempted or completed derivation evaluation and require a date-time."
+    },
+    "source_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_type",
+          "source_ref",
+          "source_version",
+          "source_sha256"
+        ],
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "OUTCOME",
+              "CONSEQUENCE",
+              "MATRIX_STATE_TRANSITION"
+            ]
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 128
+          },
+          "source_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "source_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source_type": {
+                  "const": "OUTCOME"
+                }
+              },
+              "required": [
+                "source_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "source_ref": {
+                  "pattern": "^OUT-[0-9A-Z:\\-_.]+$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "source_type": {
+                  "const": "CONSEQUENCE"
+                }
+              },
+              "required": [
+                "source_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "source_ref": {
+                  "pattern": "^CSQ-[0-9A-Z:\\-_.]+$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "source_type": {
+                  "const": "MATRIX_STATE_TRANSITION"
+                }
+              },
+              "required": [
+                "source_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "source_ref": {
+                  "pattern": "^MST-[0-9A-Z:\\-_.]+$"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis_type",
+        "processor_type",
+        "processor_ref",
+        "basis_refs",
+        "method_reference",
+        "evidence_reference"
+      ],
+      "properties": {
+        "basis_type": {
+          "type": "string",
+          "enum": [
+            "OBSERVATION",
+            "INFERENCE",
+            "MIXED",
+            "UNKNOWN"
+          ]
+        },
+        "processor_type": {
+          "type": "string",
+          "enum": [
+            "HUMAN",
+            "MACHINE",
+            "HUMAN_AND_MACHINE",
+            "EXTERNAL_SYSTEM"
+          ],
+          "description": "Generic processing class. A concrete implementation such as NeuroLoop may be referenced by processor_ref without becoming a required Core dependency."
+        },
+        "processor_ref": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160,
+          "description": "Minimized reference to the human, machine or external processor responsible for the derivation. Concrete implementations such as NeuroLoop may appear here without becoming required Core semantics."
+        },
+        "basis_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_:\\-.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Minimized references supporting the derivation basis. These are not substitutes for source_bindings, which bind the canonical OUTCOME, CONSEQUENCE or MATRIX STATE source objects."
+        },
+        "method_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "basis_type": {
+                "const": "OBSERVATION"
+              }
+            },
+            "required": [
+              "basis_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_reference": {
+                "type": "string"
+              },
+              "basis_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "basis_type": {
+                "enum": [
+                  "INFERENCE",
+                  "MIXED"
+                ]
+              }
+            },
+            "required": [
+              "basis_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "method_reference": {
+                "type": "string"
+              },
+              "evidence_reference": {
+                "type": "string"
+              },
+              "basis_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "basis_type": {
+                "const": "UNKNOWN"
+              }
+            },
+            "required": [
+              "basis_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "method_reference": {
+                "type": "null"
+              },
+              "evidence_reference": {
+                "type": "null"
+              },
+              "basis_refs": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "signal": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "signal_class",
+        "signal_reference",
+        "signal_sha256"
+      ],
+      "properties": {
+        "signal_class": {
+          "type": "string",
+          "enum": [
+            "PERFORMANCE",
+            "RISK",
+            "ANOMALY",
+            "DEVIATION",
+            "STATE_CHANGE",
+            "OTHER_CONTROLLED"
+          ],
+          "description": "Domain-neutral classification of the derived signal. It does not itself prescribe a response."
+        },
+        "signal_reference": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "signal_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "influence_targets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_class",
+          "target_ref",
+          "influence_mode"
+        ],
+        "properties": {
+          "target_class": {
+            "type": "string",
+            "enum": [
+              "POLICY",
+              "CAPABILITY",
+              "AUTHORITY",
+              "AUTHORIZATION",
+              "PREDICTION",
+              "EXECUTION"
+            ]
+          },
+          "target_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z0-9_:\\-.]+$",
+            "minLength": 3,
+            "maxLength": 160,
+            "description": "Optional reference to a specific future or review target. Presence of this reference does not mutate or authorize the target."
+          },
+          "influence_mode": {
+            "type": "string",
+            "enum": [
+              "REVIEW",
+              "REASSESS",
+              "MONITOR",
+              "ESCALATE",
+              "UPDATE_CANDIDATE"
+            ],
+            "description": "Advisory influence mode only. No mode directly changes policy, capability, authority, authorization or execution state."
+          }
+        }
+      }
+    },
+    "review": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "reviewed_at",
+        "reviewer_refs",
+        "review_reference"
+      ],
+      "properties": {
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewer_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_:\\-.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        },
+        "review_reference": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      },
+      "description": "Evidence that the feedback was reviewed. Review does not mean approval, authorization, adoption or application."
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ]
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "relation",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^FBK-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "INITIAL",
+            "REVISION",
+            "SUPERSEDES"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "relation": {
+                "const": "INITIAL"
+              }
+            },
+            "required": [
+              "relation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "derived_from": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relation": {
+                "enum": [
+                  "REVISION",
+                  "SUPERSEDES"
+                ]
+              }
+            },
+            "required": [
+              "relation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "derived_from": {
+                "type": "string",
+                "pattern": "^FBK-[0-9A-Z:\\-_.]+$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_feedback",
+        "feedback_requires_source",
+        "exact_source_version_required",
+        "source_hash_binding_required",
+        "feedback_not_outcome",
+        "feedback_not_consequence",
+        "feedback_not_matrix_state",
+        "feedback_not_decision",
+        "feedback_not_authorization",
+        "feedback_not_execution",
+        "feedback_is_information_not_command",
+        "feedback_pending_not_derived",
+        "derived_feedback_requires_derived_at",
+        "feedback_processor_reference_required",
+        "source_bindings_not_derivation_basis_refs",
+        "review_not_approval",
+        "review_not_authorization",
+        "influence_target_not_automatic_change",
+        "future_governed_action_requires_normal_authorization_chain",
+        "no_automatic_policy_update",
+        "no_automatic_capability_change",
+        "no_automatic_authority_change",
+        "no_automatic_authorization",
+        "no_automatic_execution",
+        "historical_events_not_retroactively_altered",
+        "historical_evidence_not_retroactively_altered",
+        "historical_outcome_not_retroactively_altered",
+        "historical_consequence_not_retroactively_altered",
+        "historical_matrix_state_not_retroactively_altered",
+        "outcome_source_observation_runtime_validation_required",
+        "matrix_transition_source_runtime_validation_required",
+        "cross_object_binding_runtime_validation_required",
+        "derivation_not_truth",
+        "observation_not_inference",
+        "inference_requires_method_and_evidence",
+        "unknown_not_truth",
+        "processor_implementation_not_core_semantics",
+        "neuroloop_not_required",
+        "append_only_genealogy",
+        "feedback_genealogy_relation_coherence",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_feedback": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_requires_source": {
+          "type": "boolean",
+          "const": true
+        },
+        "exact_source_version_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_hash_binding_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_outcome": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_consequence": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_matrix_state": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_decision": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_not_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_is_information_not_command": {
+          "type": "boolean",
+          "const": true
+        },
+        "review_not_approval": {
+          "type": "boolean",
+          "const": true
+        },
+        "review_not_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "influence_target_not_automatic_change": {
+          "type": "boolean",
+          "const": true
+        },
+        "future_governed_action_requires_normal_authorization_chain": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_policy_update": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_capability_change": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_authority_change": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "historical_events_not_retroactively_altered": {
+          "type": "boolean",
+          "const": true
+        },
+        "historical_evidence_not_retroactively_altered": {
+          "type": "boolean",
+          "const": true
+        },
+        "historical_outcome_not_retroactively_altered": {
+          "type": "boolean",
+          "const": true
+        },
+        "historical_consequence_not_retroactively_altered": {
+          "type": "boolean",
+          "const": true
+        },
+        "historical_matrix_state_not_retroactively_altered": {
+          "type": "boolean",
+          "const": true
+        },
+        "outcome_source_observation_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "matrix_transition_source_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "cross_object_binding_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "derivation_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "observation_not_inference": {
+          "type": "boolean",
+          "const": true
+        },
+        "inference_requires_method_and_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "unknown_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "processor_implementation_not_core_semantics": {
+          "type": "boolean",
+          "const": true
+        },
+        "neuroloop_not_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_pending_not_derived": {
+          "type": "boolean",
+          "const": true
+        },
+        "derived_feedback_requires_derived_at": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_processor_reference_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "source_bindings_not_derivation_basis_refs": {
+          "type": "boolean",
+          "const": true
+        },
+        "feedback_genealogy_relation_coherence": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "PENDING"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "derivation": {
+            "properties": {
+              "basis_type": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "signal": {
+            "type": "null"
+          },
+          "review": {
+            "type": "null"
+          },
+          "evidence_state": {
+            "enum": [
+              "MISSING",
+              "UNKNOWN"
+            ]
+          },
+          "evidence_reference": {
+            "type": "null"
+          },
+          "derived_at": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "GENERATED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "derivation": {
+            "properties": {
+              "basis_type": {
+                "enum": [
+                  "OBSERVATION",
+                  "INFERENCE",
+                  "MIXED"
+                ]
+              }
+            }
+          },
+          "signal": {
+            "type": "object"
+          },
+          "review": {
+            "type": "null"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          },
+          "derived_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "REVIEWED",
+              "CONTESTED"
+            ]
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "derivation": {
+            "properties": {
+              "basis_type": {
+                "enum": [
+                  "OBSERVATION",
+                  "INFERENCE",
+                  "MIXED"
+                ]
+              }
+            }
+          },
+          "signal": {
+            "type": "object"
+          },
+          "review": {
+            "type": "object"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          },
+          "derived_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "UNKNOWN"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "derivation": {
+            "properties": {
+              "basis_type": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "signal": {
+            "type": "null"
+          },
+          "review": {
+            "type": "null"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          },
+          "derived_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_state": {
+            "const": "PRESENT"
+          }
+        },
+        "required": [
+          "evidence_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_state": {
+            "enum": [
+              "MISSING",
+              "NOT_APPLICABLE",
+              "UNKNOWN"
+            ]
+          }
+        },
+        "required": [
+          "evidence_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_reference": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

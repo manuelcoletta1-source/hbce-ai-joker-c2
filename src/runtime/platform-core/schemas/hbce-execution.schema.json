@@ -1,0 +1,1067 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-execution.schema.json",
+  "title": "HBCE Platform Core Execution Schema v1",
+  "description": "Canonical HBCE Platform Core schema representing a controlled execution attempt bound to an exact authorization. Execution records authorization precheck, exact action and request binding, authorization consumption, state before and after the attempt, execution lifecycle and evidence. EXECUTED means that the execution attempt completed; it does not mean success, outcome correctness or desired consequence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "execution_id",
+    "execution_version",
+    "principal_ref",
+    "actor_ref",
+    "authorization_ref",
+    "authorization_version",
+    "authorization_sha256",
+    "iospace_ref",
+    "enforcement_point_ref",
+    "execution_engine_ref",
+    "binding_check",
+    "precheck",
+    "authorization_consumption",
+    "state_before",
+    "state_after",
+    "state",
+    "requested_at",
+    "started_at",
+    "completed_at",
+    "evidence_state",
+    "evidence_reference",
+    "outcome_reference",
+    "consequence_reference",
+    "evt_reference",
+    "opc_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-EXECUTION-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_EXECUTION"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "execution_id": {
+      "type": "string",
+      "pattern": "^EXE-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "execution_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "principal_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "actor_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "authorization_ref": {
+      "type": "string",
+      "pattern": "^AZN-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Exact authorization consumed or evaluated for this execution attempt."
+    },
+    "authorization_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "authorization_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Hash commitment to the exact authorization payload evaluated by the execution gate."
+    },
+    "iospace_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "enforcement_point_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "execution_engine_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Controlled reference to the runtime component performing or attempting the execution."
+    },
+    "binding_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_class",
+        "target_ref",
+        "authorization_action_sha256",
+        "execution_action_sha256",
+        "authorization_request_sha256",
+        "execution_request_sha256",
+        "action_match_state",
+        "request_match_state"
+      ],
+      "properties": {
+        "action_class": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "target_ref": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "authorization_action_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "execution_action_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "authorization_request_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "execution_request_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "action_match_state": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "request_match_state": {
+          "type": "string",
+          "enum": [
+            "MATCH",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "precheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluated_at",
+        "authorization_state_observed",
+        "validity_state",
+        "authority_usability_state",
+        "dependency_binding_state",
+        "iospace_binding_state",
+        "enforcement_point_binding_state",
+        "replay_state",
+        "decision",
+        "evidence_reference"
+      ],
+      "properties": {
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "authorization_state_observed": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "AUTHORIZED",
+            "DENIED",
+            "REVIEW_REQUIRED",
+            "EXPIRED",
+            "REVOKED",
+            "SUPERSEDED",
+            "UNKNOWN"
+          ]
+        },
+        "validity_state": {
+          "type": "string",
+          "enum": [
+            "VALID",
+            "NOT_YET_VALID",
+            "EXPIRED",
+            "UNKNOWN"
+          ]
+        },
+        "authority_usability_state": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "dependency_binding_state": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "iospace_binding_state": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "enforcement_point_binding_state": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "replay_state": {
+          "type": "string",
+          "enum": [
+            "AVAILABLE",
+            "CONSUMED",
+            "EXHAUSTED",
+            "UNKNOWN"
+          ]
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "ALLOW_EXECUTION",
+            "BLOCK_EXECUTION",
+            "UNKNOWN"
+          ]
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      }
+    },
+    "authorization_consumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "replay_key_sha256",
+        "usage_counter_ref",
+        "consumption_event_ref",
+        "consumption_index",
+        "consumed_at",
+        "atomic"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "NOT_CONSUMED",
+            "CONSUMED",
+            "UNKNOWN"
+          ]
+        },
+        "replay_key_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "usage_counter_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "consumption_event_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "consumption_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "consumed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "atomic": {
+          "type": "boolean"
+        }
+      }
+    },
+    "state_before": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_state",
+        "state_ref",
+        "state_sha256"
+      ],
+      "properties": {
+        "observation_state": {
+          "type": "string",
+          "enum": [
+            "CAPTURED",
+            "NOT_AVAILABLE",
+            "UNKNOWN"
+          ]
+        },
+        "state_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "state_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "state_after": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_state",
+        "state_ref",
+        "state_sha256"
+      ],
+      "properties": {
+        "observation_state": {
+          "type": "string",
+          "enum": [
+            "CAPTURED",
+            "NOT_AVAILABLE",
+            "UNKNOWN"
+          ]
+        },
+        "state_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "state_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "observation_state": {
+                "const": "CAPTURED"
+              }
+            },
+            "required": [
+              "observation_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "state_ref": {
+                "type": "string"
+              },
+              "state_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "observation_state": {
+                "enum": [
+                  "NOT_AVAILABLE",
+                  "UNKNOWN"
+                ]
+              }
+            },
+            "required": [
+              "observation_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "state_ref": {
+                "type": "null"
+              },
+              "state_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "BLOCKED",
+        "EXECUTING",
+        "EXECUTED",
+        "FAILED",
+        "ABORTED",
+        "UNKNOWN"
+      ],
+      "description": "Execution lifecycle state. EXECUTED means the attempt completed and does not imply success, correct outcome or desired consequence. FAILED means the execution mechanism failed to complete the attempt, not that the business or domain outcome was negative."
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "started_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ]
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "outcome_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Optional reference to a separately evaluated outcome object. Presence does not make execution equivalent to outcome."
+    },
+    "consequence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Optional reference to a separately evaluated consequence object."
+    },
+    "evt_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "opc_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "previous_state",
+        "new_state",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^EXE-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "previous_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "PENDING",
+            "BLOCKED",
+            "EXECUTING",
+            "EXECUTED",
+            "FAILED",
+            "ABORTED",
+            "UNKNOWN"
+          ]
+        },
+        "new_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "BLOCKED",
+            "EXECUTING",
+            "EXECUTED",
+            "FAILED",
+            "ABORTED",
+            "UNKNOWN"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_evidence",
+        "execution_requires_authorization",
+        "authorization_not_execution",
+        "authorized_not_executed",
+        "execution_not_success",
+        "execution_not_outcome",
+        "execution_not_consequence",
+        "exact_authorization_version_required",
+        "authorization_hash_binding_required",
+        "action_digest_match_required",
+        "request_digest_match_required",
+        "iospace_match_required",
+        "enforcement_point_match_required",
+        "precheck_allow_required_before_start",
+        "pending_not_consumed",
+        "authorization_consumption_required_before_start",
+        "atomic_consumption_required",
+        "state_before_required_before_start",
+        "state_after_required_after_terminal_execution",
+        "failed_or_aborted_state_after_may_be_unavailable",
+        "stale_or_revoked_authorization_blocks_start",
+        "unknown_blocks_start",
+        "blocked_not_executed",
+        "cross_object_binding_runtime_validation_required",
+        "temporal_order_runtime_validation_required",
+        "atomic_consumption_runtime_enforcement_required",
+        "append_only_genealogy",
+        "no_automatic_success_claim",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "execution_requires_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "authorization_not_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "authorized_not_executed": {
+          "type": "boolean",
+          "const": true
+        },
+        "execution_not_success": {
+          "type": "boolean",
+          "const": true
+        },
+        "execution_not_outcome": {
+          "type": "boolean",
+          "const": true
+        },
+        "execution_not_consequence": {
+          "type": "boolean",
+          "const": true
+        },
+        "exact_authorization_version_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "authorization_hash_binding_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "action_digest_match_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "request_digest_match_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "iospace_match_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "enforcement_point_match_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "precheck_allow_required_before_start": {
+          "type": "boolean",
+          "const": true
+        },
+        "authorization_consumption_required_before_start": {
+          "type": "boolean",
+          "const": true
+        },
+        "atomic_consumption_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "state_before_required_before_start": {
+          "type": "boolean",
+          "const": true
+        },
+        "state_after_required_after_terminal_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "stale_or_revoked_authorization_blocks_start": {
+          "type": "boolean",
+          "const": true
+        },
+        "unknown_blocks_start": {
+          "type": "boolean",
+          "const": true
+        },
+        "blocked_not_executed": {
+          "type": "boolean",
+          "const": true
+        },
+        "cross_object_binding_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "temporal_order_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "atomic_consumption_runtime_enforcement_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_success_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        },
+        "pending_not_consumed": {
+          "type": "boolean",
+          "const": true
+        },
+        "failed_or_aborted_state_after_may_be_unavailable": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "EXECUTING",
+              "EXECUTED",
+              "FAILED",
+              "ABORTED"
+            ]
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "binding_check": {
+            "properties": {
+              "action_match_state": {
+                "const": "MATCH"
+              },
+              "request_match_state": {
+                "const": "MATCH"
+              }
+            }
+          },
+          "precheck": {
+            "properties": {
+              "authorization_state_observed": {
+                "const": "AUTHORIZED"
+              },
+              "validity_state": {
+                "const": "VALID"
+              },
+              "authority_usability_state": {
+                "const": "PASS"
+              },
+              "dependency_binding_state": {
+                "const": "PASS"
+              },
+              "iospace_binding_state": {
+                "const": "PASS"
+              },
+              "enforcement_point_binding_state": {
+                "const": "PASS"
+              },
+              "replay_state": {
+                "const": "AVAILABLE"
+              },
+              "decision": {
+                "const": "ALLOW_EXECUTION"
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          },
+          "authorization_consumption": {
+            "properties": {
+              "state": {
+                "const": "CONSUMED"
+              },
+              "usage_counter_ref": {
+                "type": "string"
+              },
+              "consumption_event_ref": {
+                "type": "string"
+              },
+              "consumption_index": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "consumed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "atomic": {
+                "const": true
+              }
+            }
+          },
+          "state_before": {
+            "properties": {
+              "observation_state": {
+                "const": "CAPTURED"
+              },
+              "state_ref": {
+                "type": "string"
+              },
+              "state_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "EXECUTED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state_after": {
+            "properties": {
+              "observation_state": {
+                "const": "CAPTURED"
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "FAILED",
+              "ABORTED"
+            ]
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "BLOCKED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "precheck": {
+            "properties": {
+              "decision": {
+                "const": "BLOCK_EXECUTION"
+              }
+            }
+          },
+          "authorization_consumption": {
+            "properties": {
+              "state": {
+                "const": "NOT_CONSUMED"
+              },
+              "consumption_event_ref": {
+                "type": "null"
+              },
+              "consumption_index": {
+                "type": "null"
+              },
+              "consumed_at": {
+                "type": "null"
+              }
+            }
+          },
+          "started_at": {
+            "type": "null"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "PENDING"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "started_at": {
+            "type": "null"
+          },
+          "completed_at": {
+            "type": "null"
+          },
+          "authorization_consumption": {
+            "properties": {
+              "state": {
+                "const": "NOT_CONSUMED"
+              },
+              "consumption_event_ref": {
+                "type": "null"
+              },
+              "consumption_index": {
+                "type": "null"
+              },
+              "consumed_at": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

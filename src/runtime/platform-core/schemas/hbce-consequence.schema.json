@@ -1,0 +1,1134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-consequence.schema.json",
+  "title": "HBCE Platform Core Consequence Schema v1",
+  "description": "Canonical HBCE Platform Core schema representing an observed or attributable effect following an execution or outcome. CONSEQUENCE separates effect observation, attribution assessment and explicit causal claims. Temporal succession, observation and operational attribution do not by themselves establish causality.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "consequence_id",
+    "consequence_version",
+    "execution_ref",
+    "execution_version",
+    "execution_sha256",
+    "outcome_binding",
+    "state",
+    "evaluated_at",
+    "effect_observation",
+    "attribution_assessment",
+    "evidence_state",
+    "evidence_reference",
+    "evt_reference",
+    "opc_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-CONSEQUENCE-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_CONSEQUENCE"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "consequence_id": {
+      "type": "string",
+      "pattern": "^CSQ-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "consequence_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "execution_ref": {
+      "type": "string",
+      "pattern": "^EXE-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "execution_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "execution_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "outcome_binding": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "outcome_ref",
+        "outcome_version",
+        "outcome_sha256",
+        "outcome_state_observed"
+      ],
+      "properties": {
+        "outcome_ref": {
+          "type": "string",
+          "pattern": "^OUT-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "outcome_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "outcome_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outcome_state_observed": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "OBSERVED",
+            "NOT_AVAILABLE",
+            "CONTESTED",
+            "UNKNOWN"
+          ]
+        }
+      }
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "OBSERVED",
+        "ATTRIBUTED",
+        "NOT_AVAILABLE",
+        "CONTESTED",
+        "UNKNOWN"
+      ],
+      "description": "Overall consequence evaluation state. OBSERVED means an effect was observed without a positive attribution claim. ATTRIBUTED means an explicit declared attribution exists, which still does not automatically establish causal truth."
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effect_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_state",
+        "temporal_class",
+        "effect_domains",
+        "effect_class",
+        "target_ref",
+        "effect_reference",
+        "effect_sha256",
+        "observed_at",
+        "observation_source"
+      ],
+      "properties": {
+        "observation_state": {
+          "type": "string",
+          "enum": [
+            "OBSERVED",
+            "NOT_AVAILABLE",
+            "UNKNOWN"
+          ]
+        },
+        "temporal_class": {
+          "type": "string",
+          "enum": [
+            "IMMEDIATE",
+            "DELAYED",
+            "UNKNOWN"
+          ]
+        },
+        "effect_domains": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "enum": [
+              "TECHNICAL",
+              "OPERATIONAL",
+              "FINANCIAL",
+              "ORGANIZATIONAL",
+              "PHYSICAL",
+              "REGULATORY",
+              "HUMAN",
+              "OTHER_CONTROLLED"
+            ]
+          }
+        },
+        "effect_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "target_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "effect_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "effect_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "observed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "observation_source": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "source_type",
+            "observer_refs"
+          ],
+          "properties": {
+            "source_type": {
+              "type": "string",
+              "enum": [
+                "HUMAN",
+                "MACHINE",
+                "HUMAN_AND_MACHINE",
+                "EXTERNAL_SYSTEM"
+              ]
+            },
+            "observer_refs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Z0-9_\\-:.]+$",
+                "minLength": 3,
+                "maxLength": 160
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "observation_state": {
+                "const": "OBSERVED"
+              }
+            },
+            "required": [
+              "observation_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "temporal_class": {
+                "enum": [
+                  "IMMEDIATE",
+                  "DELAYED"
+                ]
+              },
+              "effect_domains": {
+                "minItems": 1
+              },
+              "effect_class": {
+                "type": "string"
+              },
+              "effect_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "observation_source": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "observation_state": {
+                "enum": [
+                  "NOT_AVAILABLE",
+                  "UNKNOWN"
+                ]
+              }
+            },
+            "required": [
+              "observation_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "temporal_class": {
+                "const": "UNKNOWN"
+              },
+              "effect_domains": {
+                "maxItems": 0
+              },
+              "effect_class": {
+                "type": "null"
+              },
+              "target_ref": {
+                "type": "null"
+              },
+              "effect_reference": {
+                "type": "null"
+              },
+              "effect_sha256": {
+                "type": "null"
+              },
+              "observed_at": {
+                "type": "null"
+              },
+              "observation_source": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "attribution_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "relation_type",
+        "assessed_at",
+        "assessor_refs",
+        "basis_refs",
+        "method_reference",
+        "evidence_reference"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "NOT_ASSESSED",
+            "ASSOCIATED",
+            "ATTRIBUTED",
+            "NOT_ATTRIBUTED",
+            "CONTESTED",
+            "UNKNOWN"
+          ]
+        },
+        "relation_type": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "TEMPORAL_ASSOCIATION",
+            "OPERATIONAL_ATTRIBUTION",
+            "CAUSAL_CLAIM",
+            "UNKNOWN"
+          ]
+        },
+        "assessed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "assessor_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        },
+        "basis_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        },
+        "method_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_ASSESSED"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "const": "NONE"
+              },
+              "assessed_at": {
+                "type": "null"
+              },
+              "assessor_refs": {
+                "maxItems": 0
+              },
+              "basis_refs": {
+                "maxItems": 0
+              },
+              "method_reference": {
+                "type": "null"
+              },
+              "evidence_reference": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "ASSOCIATED"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "const": "TEMPORAL_ASSOCIATION"
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "ATTRIBUTED"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "enum": [
+                  "OPERATIONAL_ATTRIBUTION",
+                  "CAUSAL_CLAIM"
+                ]
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "NOT_ATTRIBUTED"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "const": "NONE"
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "CONTESTED"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "enum": [
+                  "TEMPORAL_ASSOCIATION",
+                  "OPERATIONAL_ATTRIBUTION",
+                  "CAUSAL_CLAIM",
+                  "UNKNOWN"
+                ]
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "UNKNOWN"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "relation_type": {
+                "const": "UNKNOWN"
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "method_reference": {
+                "type": "null"
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relation_type": {
+                "const": "CAUSAL_CLAIM"
+              }
+            },
+            "required": [
+              "relation_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "ATTRIBUTED",
+                  "CONTESTED"
+                ]
+              },
+              "assessed_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "assessor_refs": {
+                "minItems": 1
+              },
+              "basis_refs": {
+                "minItems": 1
+              },
+              "method_reference": {
+                "type": "string"
+              },
+              "evidence_reference": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ]
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "evt_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "opc_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "previous_state",
+        "new_state",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^CSQ-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "previous_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "PENDING",
+            "OBSERVED",
+            "ATTRIBUTED",
+            "NOT_AVAILABLE",
+            "CONTESTED",
+            "UNKNOWN"
+          ]
+        },
+        "new_state": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "OBSERVED",
+            "ATTRIBUTED",
+            "NOT_AVAILABLE",
+            "CONTESTED",
+            "UNKNOWN"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_evidence",
+        "consequence_requires_execution",
+        "consequence_not_execution",
+        "consequence_not_outcome",
+        "exact_execution_version_required",
+        "execution_hash_binding_required",
+        "outcome_binding_optional_but_exact_if_present",
+        "observed_effect_not_causal_proof",
+        "temporal_sequence_not_causality",
+        "temporal_association_not_attribution",
+        "attribution_not_truth",
+        "observation_not_inference",
+        "causal_claim_must_be_explicit",
+        "causal_claim_requires_method_and_evidence",
+        "not_attributed_not_proof_of_no_causality",
+        "unknown_not_attributed",
+        "observed_effect_digest_required",
+        "cross_object_binding_runtime_validation_required",
+        "temporal_order_runtime_validation_required",
+        "append_only_genealogy",
+        "no_automatic_legal_liability_claim",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "consequence_requires_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "consequence_not_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "consequence_not_outcome": {
+          "type": "boolean",
+          "const": true
+        },
+        "exact_execution_version_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "execution_hash_binding_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "outcome_binding_optional_but_exact_if_present": {
+          "type": "boolean",
+          "const": true
+        },
+        "observed_effect_not_causal_proof": {
+          "type": "boolean",
+          "const": true
+        },
+        "temporal_sequence_not_causality": {
+          "type": "boolean",
+          "const": true
+        },
+        "attribution_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "observation_not_inference": {
+          "type": "boolean",
+          "const": true
+        },
+        "causal_claim_must_be_explicit": {
+          "type": "boolean",
+          "const": true
+        },
+        "causal_claim_requires_method_and_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "not_attributed_not_proof_of_no_causality": {
+          "type": "boolean",
+          "const": true
+        },
+        "unknown_not_attributed": {
+          "type": "boolean",
+          "const": true
+        },
+        "observed_effect_digest_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "cross_object_binding_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "temporal_order_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_legal_liability_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        },
+        "temporal_association_not_attribution": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "ATTRIBUTED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "OBSERVED"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "const": "ATTRIBUTED"
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "CONTESTED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "OBSERVED"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "const": "CONTESTED"
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "OBSERVED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "OBSERVED"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "NOT_ASSESSED",
+                  "ASSOCIATED",
+                  "NOT_ATTRIBUTED",
+                  "UNKNOWN"
+                ]
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "NOT_AVAILABLE"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "NOT_AVAILABLE"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "const": "NOT_ASSESSED"
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "UNKNOWN"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "PENDING"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effect_observation": {
+            "properties": {
+              "observation_state": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "attribution_assessment": {
+            "properties": {
+              "state": {
+                "const": "NOT_ASSESSED"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

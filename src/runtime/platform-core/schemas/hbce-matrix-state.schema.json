@@ -1,0 +1,891 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-matrix-state.schema.json",
+  "title": "HBCE Platform Core MATRIX State Schema v1",
+  "description": "Canonical HBCE Platform Core schema representing a declared operational MATRIX state. A MATRIX STATE is a bounded, evidence-oriented and reconstructible representation inside the wider MATRIX architectural framework. It is not MATRIX itself, is not identical to reality, and must keep observation, inference and declaration semantically distinct.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "matrix_state_id",
+    "matrix_state_version",
+    "state_origin",
+    "scope_ref",
+    "effective_at",
+    "declared_at",
+    "declaration_source",
+    "dimensions",
+    "transition_binding",
+    "evidence_state",
+    "evidence_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-MATRIX-STATE-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_MATRIX_STATE"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "matrix_state_id": {
+      "type": "string",
+      "pattern": "^MST-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "matrix_state_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "state_origin": {
+      "type": "string",
+      "enum": [
+        "INITIAL",
+        "TRANSITION_RESULT",
+        "REVISION"
+      ],
+      "description": "Provenance of this MATRIX STATE snapshot. INITIAL is a baseline declaration. TRANSITION_RESULT is produced by a governed state transition. REVISION is an append-only revised representation. T0 and T1 are relational roles between snapshots and acts, not permanent properties of a MATRIX STATE object."
+    },
+    "scope_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "effective_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time to which this declared operational state applies."
+    },
+    "declared_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time at which this MATRIX STATE representation was declared."
+    },
+    "declaration_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "declarer_refs"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "HUMAN",
+            "MACHINE",
+            "HUMAN_AND_MACHINE",
+            "EXTERNAL_SYSTEM"
+          ]
+        },
+        "declarer_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        }
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dimension_ref",
+          "representation_state",
+          "value_reference",
+          "value_sha256",
+          "basis"
+        ],
+        "properties": {
+          "dimension_ref": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "representation_state": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "NOT_AVAILABLE",
+              "CONTESTED",
+              "UNKNOWN"
+            ]
+          },
+          "value_reference": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z0-9_:\\-.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "value_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "basis": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "basis_type",
+              "source_refs",
+              "method_reference",
+              "evidence_reference"
+            ],
+            "properties": {
+              "basis_type": {
+                "type": "string",
+                "enum": [
+                  "OBSERVATION",
+                  "INFERENCE",
+                  "MIXED",
+                  "UNKNOWN"
+                ]
+              },
+              "source_refs": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Z0-9_\\-:.]+$",
+                  "minLength": 3,
+                  "maxLength": 160
+                }
+              },
+              "method_reference": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[A-Z0-9_:\\-.]+$",
+                "minLength": 3,
+                "maxLength": 160
+              },
+              "evidence_reference": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[A-Z0-9_:\\-.]+$",
+                "minLength": 3,
+                "maxLength": 160
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "basis_type": {
+                      "const": "OBSERVATION"
+                    }
+                  },
+                  "required": [
+                    "basis_type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "source_refs": {
+                      "minItems": 1
+                    },
+                    "evidence_reference": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "basis_type": {
+                      "enum": [
+                        "INFERENCE",
+                        "MIXED"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "basis_type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "source_refs": {
+                      "minItems": 1
+                    },
+                    "method_reference": {
+                      "type": "string"
+                    },
+                    "evidence_reference": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "basis_type": {
+                      "const": "UNKNOWN"
+                    }
+                  },
+                  "required": [
+                    "basis_type"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "source_refs": {
+                      "maxItems": 0
+                    },
+                    "method_reference": {
+                      "type": "null"
+                    },
+                    "evidence_reference": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "representation_state": {
+                  "enum": [
+                    "PRESENT",
+                    "CONTESTED"
+                  ]
+                }
+              },
+              "required": [
+                "representation_state"
+              ]
+            },
+            "then": {
+              "properties": {
+                "value_reference": {
+                  "type": "string"
+                },
+                "value_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "basis": {
+                  "properties": {
+                    "basis_type": {
+                      "enum": [
+                        "OBSERVATION",
+                        "INFERENCE",
+                        "MIXED"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "representation_state": {
+                  "const": "NOT_AVAILABLE"
+                }
+              },
+              "required": [
+                "representation_state"
+              ]
+            },
+            "then": {
+              "properties": {
+                "value_reference": {
+                  "type": "null"
+                },
+                "value_sha256": {
+                  "type": "null"
+                },
+                "basis": {
+                  "properties": {
+                    "basis_type": {
+                      "const": "OBSERVATION"
+                    },
+                    "source_refs": {
+                      "minItems": 1
+                    },
+                    "evidence_reference": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "representation_state": {
+                  "const": "UNKNOWN"
+                }
+              },
+              "required": [
+                "representation_state"
+              ]
+            },
+            "then": {
+              "properties": {
+                "value_reference": {
+                  "type": "null"
+                },
+                "value_sha256": {
+                  "type": "null"
+                },
+                "basis": {
+                  "properties": {
+                    "basis_type": {
+                      "const": "UNKNOWN"
+                    },
+                    "source_refs": {
+                      "maxItems": 0
+                    },
+                    "method_reference": {
+                      "type": "null"
+                    },
+                    "evidence_reference": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "transition_binding": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "prior_matrix_state_ref",
+        "prior_matrix_state_version",
+        "prior_matrix_state_sha256",
+        "execution_ref",
+        "execution_version",
+        "execution_sha256",
+        "outcome_binding",
+        "consequence_ref",
+        "consequence_version",
+        "consequence_sha256",
+        "transition_evidence_reference"
+      ],
+      "properties": {
+        "prior_matrix_state_ref": {
+          "type": "string",
+          "pattern": "^MST-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "prior_matrix_state_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "prior_matrix_state_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "execution_ref": {
+          "type": "string",
+          "pattern": "^EXE-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "execution_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "execution_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outcome_binding": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "outcome_ref",
+            "outcome_version",
+            "outcome_sha256"
+          ],
+          "properties": {
+            "outcome_ref": {
+              "type": "string",
+              "pattern": "^OUT-[0-9A-Z:\\-_.]+$",
+              "minLength": 5,
+              "maxLength": 128
+            },
+            "outcome_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "outcome_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "consequence_ref": {
+          "type": "string",
+          "pattern": "^CSQ-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "consequence_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "consequence_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "transition_evidence_reference": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      }
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ]
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "relation",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^MST-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "INITIAL",
+            "STATE_TRANSITION",
+            "REVISION",
+            "SUPERSEDES"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_state",
+        "matrix_state_not_matrix_framework",
+        "matrix_state_is_declared_representation",
+        "matrix_state_not_reality",
+        "declared_state_not_observation",
+        "declared_state_not_inference",
+        "observation_not_inference",
+        "trace_not_truth",
+        "t0_t1_are_relational_roles_not_intrinsic_state_roles",
+        "matrix_state_may_be_prior_for_later_transition",
+        "transition_result_requires_transition_binding",
+        "transition_result_requires_prior_matrix_state",
+        "transition_result_requires_exact_execution_binding",
+        "transition_result_requires_exact_consequence_binding",
+        "outcome_binding_optional_but_exact_if_present",
+        "action_bound_transitively_through_execution",
+        "dimension_basis_must_be_explicit",
+        "inference_requires_method_and_evidence",
+        "unknown_not_truth",
+        "contested_not_truth",
+        "state_update_preserves_prior_act_consequence_relation",
+        "origin_genealogy_coherence",
+        "transition_genealogy_prior_binding_runtime_validation_required",
+        "cross_object_binding_runtime_validation_required",
+        "temporal_order_runtime_validation_required",
+        "state_transition_runtime_validation_required",
+        "append_only_genealogy",
+        "no_automatic_causal_claim",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_state": {
+          "type": "boolean",
+          "const": true
+        },
+        "matrix_state_not_matrix_framework": {
+          "type": "boolean",
+          "const": true
+        },
+        "matrix_state_is_declared_representation": {
+          "type": "boolean",
+          "const": true
+        },
+        "matrix_state_not_reality": {
+          "type": "boolean",
+          "const": true
+        },
+        "declared_state_not_observation": {
+          "type": "boolean",
+          "const": true
+        },
+        "declared_state_not_inference": {
+          "type": "boolean",
+          "const": true
+        },
+        "observation_not_inference": {
+          "type": "boolean",
+          "const": true
+        },
+        "trace_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "t0_t1_are_relational_roles_not_intrinsic_state_roles": {
+          "type": "boolean",
+          "const": true
+        },
+        "transition_result_requires_transition_binding": {
+          "type": "boolean",
+          "const": true
+        },
+        "transition_result_requires_prior_matrix_state": {
+          "type": "boolean",
+          "const": true
+        },
+        "transition_result_requires_exact_execution_binding": {
+          "type": "boolean",
+          "const": true
+        },
+        "transition_result_requires_exact_consequence_binding": {
+          "type": "boolean",
+          "const": true
+        },
+        "outcome_binding_optional_but_exact_if_present": {
+          "type": "boolean",
+          "const": true
+        },
+        "action_bound_transitively_through_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "dimension_basis_must_be_explicit": {
+          "type": "boolean",
+          "const": true
+        },
+        "inference_requires_method_and_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "unknown_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "contested_not_truth": {
+          "type": "boolean",
+          "const": true
+        },
+        "state_update_preserves_prior_act_consequence_relation": {
+          "type": "boolean",
+          "const": true
+        },
+        "cross_object_binding_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "temporal_order_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "state_transition_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_causal_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        },
+        "matrix_state_may_be_prior_for_later_transition": {
+          "type": "boolean",
+          "const": true
+        },
+        "origin_genealogy_coherence": {
+          "type": "boolean",
+          "const": true
+        },
+        "transition_genealogy_prior_binding_runtime_validation_required": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state_origin": {
+            "const": "INITIAL"
+          }
+        },
+        "required": [
+          "state_origin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "transition_binding": {
+            "type": "null"
+          },
+          "genealogy": {
+            "properties": {
+              "derived_from": {
+                "type": "null"
+              },
+              "relation": {
+                "const": "INITIAL"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state_origin": {
+            "const": "REVISION"
+          }
+        },
+        "required": [
+          "state_origin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "transition_binding": {
+            "type": "null"
+          },
+          "genealogy": {
+            "properties": {
+              "derived_from": {
+                "type": "string",
+                "pattern": "^MST-[0-9A-Z:\\-_.]+$"
+              },
+              "relation": {
+                "enum": [
+                  "REVISION",
+                  "SUPERSEDES"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state_origin": {
+            "const": "TRANSITION_RESULT"
+          }
+        },
+        "required": [
+          "state_origin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "transition_binding": {
+            "type": "object"
+          },
+          "evidence_state": {
+            "const": "PRESENT"
+          },
+          "evidence_reference": {
+            "type": "string"
+          },
+          "genealogy": {
+            "properties": {
+              "derived_from": {
+                "type": "string",
+                "pattern": "^MST-[0-9A-Z:\\-_.]+$"
+              },
+              "relation": {
+                "const": "STATE_TRANSITION"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_state": {
+            "const": "PRESENT"
+          }
+        },
+        "required": [
+          "evidence_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_reference": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_state": {
+            "enum": [
+              "MISSING",
+              "NOT_APPLICABLE",
+              "UNKNOWN"
+            ]
+          }
+        },
+        "required": [
+          "evidence_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence_reference": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

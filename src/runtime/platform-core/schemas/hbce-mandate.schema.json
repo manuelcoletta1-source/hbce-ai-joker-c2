@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-mandate.schema.json",
+  "title": "HBCE Platform Core Mandate Schema v1",
+  "description": "Canonical HBCE Platform Core schema for a mandate relationship between an actor and a principal. A mandate establishes a bounded delegated relationship and does not by itself create capability, authority, authorization, execution success, legal certification or public authority status. Raw sensitive evidence must remain outside the core object and be represented through controlled references or digests.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "mandate_id",
+    "mandate_version",
+    "principal_ref",
+    "actor_ref",
+    "scope",
+    "constraints",
+    "issuing_source",
+    "state",
+    "valid_from",
+    "valid_until",
+    "created_at",
+    "updated_at",
+    "evidence_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-MANDATE-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_MANDATE"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "mandate_id": {
+      "type": "string",
+      "pattern": "^MND-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Canonical mandate identifier."
+    },
+    "mandate_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version of the mandate object itself. This is distinct from the schema version."
+    },
+    "principal_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the principal on whose behalf the actor may operate. The reference must not contain raw personal identifiers."
+    },
+    "actor_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the actor receiving the mandate. The reference must not contain raw personal identifiers."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_classes",
+        "target_refs",
+        "iospace_refs"
+      ],
+      "properties": {
+        "action_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 128
+          },
+          "description": "Classes of actions covered by the mandate. This describes mandate scope and does not itself establish technical capability."
+        },
+        "target_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Optional bounded target references."
+        },
+        "iospace_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Optional operational-space references constraining where the mandate applies."
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constraint_refs",
+        "policy_refs"
+      ],
+      "properties": {
+        "constraint_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        },
+        "policy_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        }
+      },
+      "description": "References to controlled constraints and policies. Domain-specific limits belong in domain adapters or referenced policy objects."
+    },
+    "issuing_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "issuer_ref"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "HUMAN_DECLARATION",
+            "ORGANIZATIONAL_DELEGATION",
+            "CONTRACTUAL_REFERENCE",
+            "POLICY_REFERENCE",
+            "SYSTEM_POLICY",
+            "OTHER_CONTROLLED_REFERENCE"
+          ]
+        },
+        "issuer_ref": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160,
+          "description": "Minimized reference to the source that issued or established the mandate."
+        }
+      }
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "PENDING",
+        "ACTIVE",
+        "LIMITED",
+        "SUSPENDED",
+        "CONTESTED",
+        "COMPROMISED",
+        "EXPIRED",
+        "REVOKED",
+        "SUPERSEDED",
+        "UNKNOWN"
+      ],
+      "description": "Mandate lifecycle state. AUTHORIZED and DENIED are intentionally excluded because mandate state is not authorization state."
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_reference": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Controlled reference supporting the existence of the mandate relationship. Raw evidence must remain outside this object."
+    },
+    "revocation_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Optional reference explaining or evidencing revocation."
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^MND-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Optional prior mandate superseded by this version or derived mandate."
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Lowercase SHA-256 commitment for the controlled canonical mandate payload according to the applicable hashing profile."
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "previous_state",
+        "new_state",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^MND-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "previous_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "DRAFT",
+            "PENDING",
+            "ACTIVE",
+            "LIMITED",
+            "SUSPENDED",
+            "CONTESTED",
+            "COMPROMISED",
+            "EXPIRED",
+            "REVOKED",
+            "SUPERSEDED",
+            "UNKNOWN"
+          ]
+        },
+        "new_state": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "PENDING",
+            "ACTIVE",
+            "LIMITED",
+            "SUSPENDED",
+            "CONTESTED",
+            "COMPROMISED",
+            "EXPIRED",
+            "REVOKED",
+            "SUPERSEDED",
+            "UNKNOWN"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240,
+          "description": "Public-safe or controlled cause reference text. Must not embed raw sensitive evidence."
+        },
+        "evidence_reference": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_evidence",
+        "mandate_not_capability",
+        "mandate_not_authority",
+        "mandate_not_authorization",
+        "identity_not_authority",
+        "append_only_genealogy",
+        "no_automatic_execution_claim",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "mandate_not_capability": {
+          "type": "boolean",
+          "const": true
+        },
+        "mandate_not_authority": {
+          "type": "boolean",
+          "const": true
+        },
+        "mandate_not_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "identity_not_authority": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_execution_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600,
+      "description": "Controlled safe note only. Must not contain raw sensitive evidence, secrets, credentials, identity documents, raw prompts, raw outputs or client files."
+    }
+  }
+}

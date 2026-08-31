@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-authority.schema.json",
+  "title": "HBCE Platform Core Authority Schema v1",
+  "description": "Canonical HBCE Platform Core schema representing bounded operational authority. Authority identifies the controlled power under which an action may later be authorized. Authority must bind an actor and principal to explicit mandate and capability versions, declared scope, limits, validity and source. Authority does not itself constitute authorization, execution, execution success, legal certification or public authority status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "authority_id",
+    "authority_version",
+    "principal_ref",
+    "actor_ref",
+    "mandate_ref",
+    "mandate_version",
+    "capability_ref",
+    "capability_version",
+    "authority_source",
+    "scope",
+    "limits",
+    "state",
+    "valid_from",
+    "valid_until",
+    "created_at",
+    "updated_at",
+    "evidence_state",
+    "evidence_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-AUTHORITY-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_AUTHORITY"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "authority_id": {
+      "type": "string",
+      "pattern": "^AUT-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Canonical authority identifier."
+    },
+    "authority_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version of this authority object. This is distinct from the schema version."
+    },
+    "principal_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the principal on whose behalf the bounded authority applies."
+    },
+    "actor_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the actor to which the bounded operational authority applies."
+    },
+    "mandate_ref": {
+      "type": "string",
+      "pattern": "^MND-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Exact mandate identifier supporting this authority."
+    },
+    "mandate_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Exact mandate version against which this authority was derived or evaluated."
+    },
+    "capability_ref": {
+      "type": "string",
+      "pattern": "^CAP-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Exact capability identifier bounded by this authority."
+    },
+    "capability_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Exact capability version against which this authority was derived or evaluated."
+    },
+    "authority_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "source_ref"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "HUMAN_GRANT",
+            "ORGANIZATIONAL_GRANT",
+            "CONTRACTUAL_REFERENCE",
+            "POLICY_REFERENCE",
+            "SYSTEM_POLICY",
+            "REGULATORY_REFERENCE",
+            "OTHER_CONTROLLED_REFERENCE"
+          ],
+          "description": "Controlled class of source from which the operational authority is derived. The label does not itself establish legal or public authority."
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160,
+          "description": "Controlled reference to the source from which this authority is derived."
+        },
+        "source_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Optional hash commitment for the controlled authority-source artifact."
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_classes",
+        "target_refs",
+        "iospace_refs",
+        "constraint_refs"
+      ],
+      "properties": {
+        "action_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 128
+          },
+          "description": "Action classes bounded by this authority. Presence here does not authorize a specific action."
+        },
+        "target_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Controlled target references against which authority may apply."
+        },
+        "iospace_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Operational-space references constraining where this authority may apply."
+        },
+        "constraint_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Controlled references to authority-specific constraints."
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_refs",
+        "quantitative_limit_refs",
+        "condition_refs"
+      ],
+      "properties": {
+        "policy_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "Controlled policy references that limit this authority."
+        },
+        "quantitative_limit_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "References to domain-specific quantitative limits. Values remain in controlled policy or domain adapter objects."
+        },
+        "condition_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_\\-:.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          },
+          "description": "References to additional conditions that must be evaluated before authority may support authorization."
+        }
+      }
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "DRAFT",
+        "PENDING",
+        "ACTIVE",
+        "LIMITED",
+        "SUSPENDED",
+        "CONTESTED",
+        "COMPROMISED",
+        "EXPIRED",
+        "REVOKED",
+        "SUPERSEDED",
+        "UNKNOWN"
+      ],
+      "description": "Authority lifecycle state. AUTHORIZED and DENIED are intentionally excluded because authority state is not authorization state."
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ],
+      "description": "State of evidence supporting the authority representation. MISSING or UNKNOWN must never be silently treated as PRESENT."
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Controlled reference supporting the existence or derivation of this authority. Raw evidence remains outside this object."
+    },
+    "revocation_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^AUT-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Lowercase SHA-256 commitment for the controlled canonical authority payload according to the applicable hashing profile."
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "previous_state",
+        "new_state",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^AUT-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "previous_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "DRAFT",
+            "PENDING",
+            "ACTIVE",
+            "LIMITED",
+            "SUSPENDED",
+            "CONTESTED",
+            "COMPROMISED",
+            "EXPIRED",
+            "REVOKED",
+            "SUPERSEDED",
+            "UNKNOWN"
+          ]
+        },
+        "new_state": {
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "PENDING",
+            "ACTIVE",
+            "LIMITED",
+            "SUSPENDED",
+            "CONTESTED",
+            "COMPROMISED",
+            "EXPIRED",
+            "REVOKED",
+            "SUPERSEDED",
+            "UNKNOWN"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240,
+          "description": "Controlled safe cause text or reference. Must not contain raw sensitive evidence."
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_evidence",
+        "authority_not_identity",
+        "authority_not_mandate",
+        "authority_not_capability",
+        "authority_not_authorization",
+        "authority_not_execution",
+        "active_authority_not_authorization",
+        "dependency_versions_explicit",
+        "append_only_genealogy",
+        "no_automatic_execution_claim",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "type": "boolean",
+          "const": true
+        },
+        "reference_over_raw_evidence": {
+          "type": "boolean",
+          "const": true
+        },
+        "authority_not_identity": {
+          "type": "boolean",
+          "const": true
+        },
+        "authority_not_mandate": {
+          "type": "boolean",
+          "const": true
+        },
+        "authority_not_capability": {
+          "type": "boolean",
+          "const": true
+        },
+        "authority_not_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "authority_not_execution": {
+          "type": "boolean",
+          "const": true
+        },
+        "active_authority_not_authorization": {
+          "type": "boolean",
+          "const": true
+        },
+        "dependency_versions_explicit": {
+          "type": "boolean",
+          "const": true
+        },
+        "append_only_genealogy": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_automatic_execution_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "type": "boolean",
+          "const": true
+        },
+        "fail_closed": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 600,
+      "description": "Controlled safe note only. Must not contain raw sensitive evidence, secrets, credentials, identity documents, raw prompts, raw outputs or client files."
+    }
+  }
+}
