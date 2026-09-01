@@ -3,6 +3,12 @@ import { neon } from "@neondatabase/serverless";
 
 
 import {
+  isHbceDatabaseUrlConfigured,
+  resolveHbceDatabaseUrl
+} from "./ipr-database-url-resolver";
+
+
+import {
   HBCE_DATABASE_LEGAL_CERTIFICATION_BOUNDARY,
   HBCE_DATABASE_PERSISTENCE_MODE,
   HBCE_DATABASE_SCHEMA,
@@ -572,15 +578,6 @@ type HbceSchemaStatementRow = HbceDatabaseQueryRow & {
 
 
 const NEON_SERVERLESS_DRIVER = "@neondatabase/serverless";
-
-
-const DATABASE_URL_ENV_KEYS = [
-  "POSTGRES_URL",
-  "DATABASE_URL",
-  "POSTGRES_PRISMA_URL",
-  "POSTGRES_URL_NON_POOLING",
-  "NEON_DATABASE_URL"
-];
 
 
 const MEMORY_RECORDS_COMPATIBILITY_SCHEMA_SQL = [
@@ -1739,22 +1736,12 @@ function sqlLiteral(value: string): string {
 
 
 function getDatabaseUrlFromEnv(): string | null {
-  for (const key of DATABASE_URL_ENV_KEYS) {
-    const value = process.env[key];
-
-
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-  }
-
-
-  return null;
+  return resolveHbceDatabaseUrl().databaseUrl;
 }
 
 
 function isDatabaseUrlConfigured(): boolean {
-  return Boolean(getDatabaseUrlFromEnv());
+  return isHbceDatabaseUrlConfigured();
 }
 
 
