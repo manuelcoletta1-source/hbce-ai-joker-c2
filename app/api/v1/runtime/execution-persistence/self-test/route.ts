@@ -27,6 +27,10 @@ import {
   RuntimeExecutionPersistenceError,
 } from "@/src/runtime/orchestration/runtime-execution-persistence.service";
 
+import type {
+  PlatformCoreCanonicalAuthorizationInput,
+} from "@/src/runtime/platform-core/canonical-authorization-builder";
+
 import {
   RuntimeOperationsPersistentAppendError,
 } from "@/src/runtime/operations/runtime-operations-persistent-append.service";
@@ -106,6 +110,165 @@ function sha256(
     .digest(
       "hex",
     );
+}
+
+/**
+ * Explicit synthetic Platform Core AUTHORIZATION source used only by
+ * this self-test route.
+ *
+ * These values are structural test fixtures. They do not claim
+ * production provenance and are intentionally independent from:
+ *
+ * - the authenticated session token;
+ * - persistentHumanAuthorization;
+ * - authorizationRef;
+ * - operationId;
+ * - any canonical EXECUTION identifier.
+ */
+function buildSelfTestCanonicalAuthorizationSource():
+  PlatformCoreCanonicalAuthorizationInput {
+  return {
+    authorization_id:
+      "AZN-SELF-TEST:EXECUTION-PERSISTENCE",
+
+    authorization_version:
+      1,
+
+    principal_ref:
+      "PRINCIPAL:SELF-TEST",
+
+    actor_ref:
+      "ACTOR:SELF-TEST",
+
+    authority_ref:
+      "AUT-SELF-TEST:AUTHORITY",
+
+    authority_version:
+      1,
+
+    mandate_ref:
+      "MND-SELF-TEST:MANDATE",
+
+    mandate_version:
+      1,
+
+    capability_ref:
+      "CAP-SELF-TEST:CAPABILITY",
+
+    capability_version:
+      1,
+
+    dependency_commitments: {
+      authority_sha256:
+        "a".repeat(64),
+
+      mandate_sha256:
+        "b".repeat(64),
+
+      capability_sha256:
+        "c".repeat(64),
+    },
+
+    iospace_ref:
+      "IOSPACE:SELF-TEST",
+
+    enforcement_point_ref:
+      "ENFORCEMENT:SELF-TEST",
+
+    action_binding: {
+      action_class:
+        "RUNTIME_EXECUTION",
+
+      target_ref:
+        "TARGET:SELF-TEST",
+
+      action_sha256:
+        "d".repeat(64),
+
+      request_sha256:
+        "e".repeat(64),
+    },
+
+    decision_source: {
+      source_type:
+        "HUMAN",
+
+      authorizer_refs: [
+        "AUTHOR:SELF-TEST",
+      ],
+    },
+
+    decision_basis: {
+      policy_refs: [
+        "POLICY:SELF-TEST",
+      ],
+
+      condition_refs: [
+        "CONDITION:SELF-TEST",
+      ],
+    },
+
+    state:
+      "AUTHORIZED",
+
+    decided_at:
+      "2026-01-01T00:00:00.000Z",
+
+    valid_from:
+      "2026-01-01T00:00:00.000Z",
+
+    valid_until:
+      "2099-12-31T23:59:59.000Z",
+
+    created_at:
+      "2026-01-01T00:00:00.000Z",
+
+    updated_at:
+      "2026-01-01T00:00:00.000Z",
+
+    evidence_state:
+      "PRESENT",
+
+    evidence_reference:
+      "EVIDENCE:SELF-TEST",
+
+    replay_guard: {
+      mode:
+        "SINGLE_USE",
+
+      replay_key_sha256:
+        "f".repeat(64),
+
+      max_uses:
+        1,
+
+      usage_counter_ref:
+        "COUNTER:SELF-TEST",
+    },
+
+    genealogy: {
+      derived_from:
+        null,
+
+      previous_state:
+        null,
+
+      new_state:
+        "AUTHORIZED",
+
+      cause:
+        "SELF_TEST_FIXTURE",
+
+      evidence_reference:
+        "EVIDENCE:SELF-TEST",
+
+      timestamp:
+        "2026-01-01T00:00:00.000Z",
+
+      hash:
+        "a".repeat(64),
+    },
+  };
 }
 
 function getExpectedManualToken():
@@ -906,6 +1069,9 @@ export async function POST(
         "AUTHORIZED",
       );
 
+    const canonicalAuthorizationSource =
+      buildSelfTestCanonicalAuthorizationSource();
+
     persistenceAttempted =
       true;
 
@@ -918,6 +1084,8 @@ export async function POST(
         authorization:
           persistentHumanAuthorization
             .authorization,
+
+        canonicalAuthorizationSource,
 
         expectedTip: {
           sequence:
@@ -1048,6 +1216,8 @@ export async function POST(
         authorization:
           persistentHumanAuthorization
             .authorization,
+
+        canonicalAuthorizationSource,
 
         verification: {
           pageSize:
@@ -1187,6 +1357,8 @@ export async function POST(
         authorization:
           persistentHumanAuthorization
             .authorization,
+
+        canonicalAuthorizationSource,
 
         verification: {
           pageSize:

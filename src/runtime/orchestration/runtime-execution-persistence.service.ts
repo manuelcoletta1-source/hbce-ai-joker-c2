@@ -31,6 +31,11 @@ import {
   type RuntimeOperationsPersistentAppendExpectedTip,
 } from "@/src/runtime/operations/runtime-operations-persistent-append.service";
 
+import {
+  buildPlatformCoreCanonicalAuthorization,
+  type PlatformCoreCanonicalAuthorizationInput,
+} from "@/src/runtime/platform-core/canonical-authorization-builder";
+
 export const RUNTIME_EXECUTION_PERSISTENCE_SERVICE_REVISION =
   "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SERVICE-v1_0" as const;
 
@@ -59,6 +64,15 @@ export type RuntimeExecutionPersistenceRequest = {
    * No raw authorization credentials are accepted here.
    */
   authorization: RuntimeOperationsPersistentAppendAuthorization;
+
+  /**
+   * Explicit Platform Core canonical authorization source envelope.
+   *
+   * This is a distinct control from the legacy human persistence gate.
+   * No canonical field is derived from the legacy authorization object.
+   */
+  canonicalAuthorizationSource:
+    PlatformCoreCanonicalAuthorizationInput;
 
   /**
    * Optional optimistic ledger-tip precondition.
@@ -359,6 +373,22 @@ export async function executeRuntimeAndPersist(
 > {
   assertOperationId(
     request.operationId,
+  );
+
+  /*
+   * Build and statically validate the canonical AUTHORIZATION before
+   * entering the runtime execution boundary.
+   *
+   * During this migration step the resulting canonical object remains
+   * internal to this orchestration boundary:
+   *
+   * - it is not derived from the legacy human authorization;
+   * - it is not exposed in the orchestration result;
+   * - it is not yet consumed;
+   * - it is not yet bound to a canonical EXECUTION object.
+   */
+  buildPlatformCoreCanonicalAuthorization(
+    request.canonicalAuthorizationSource,
   );
 
   /*
