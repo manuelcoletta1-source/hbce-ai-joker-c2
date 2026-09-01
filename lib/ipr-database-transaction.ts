@@ -5,6 +5,11 @@ import {
   type QueryResultRow,
 } from "@neondatabase/serverless";
 
+import {
+  isHbceDatabaseUrlConfigured,
+  requireHbceDatabaseUrl,
+} from "@/lib/ipr-database-url-resolver";
+
 export type HbceTransactionQueryValue =
   | string
   | number
@@ -112,19 +117,32 @@ function normalizeError(
 }
 
 function requireDatabaseUrl(): string {
-  const databaseUrl =
-    process.env.POSTGRES_URL ??
-    process.env.DATABASE_URL ??
-    process.env.NEON_DATABASE_URL ??
-    null;
+  try {
+    return requireHbceDatabaseUrl();
+  } catch (error) {
+    const message =
+      normalizeError(error);
 
-  if (!databaseUrl) {
-    throw new Error(
-      "HBCE_DATABASE_TRANSACTION_URL_NOT_CONFIGURED",
-    );
+    if (
+      message ===
+      "HBCE_DATABASE_URL_NOT_CONFIGURED"
+    ) {
+      throw new Error(
+        "HBCE_DATABASE_TRANSACTION_URL_NOT_CONFIGURED",
+      );
+    }
+
+    if (
+      message ===
+      "HBCE_DATABASE_URL_INVALID_CONFIGURATION"
+    ) {
+      throw new Error(
+        "HBCE_DATABASE_TRANSACTION_URL_INVALID_CONFIGURATION",
+      );
+    }
+
+    throw error;
   }
-
-  return databaseUrl;
 }
 
 function boundedInteger(
@@ -302,11 +320,7 @@ async function configureTransactionSession(
 }
 
 export function isHbceTransactionDatabaseConfigured(): boolean {
-  return Boolean(
-    process.env.POSTGRES_URL ??
-    process.env.DATABASE_URL ??
-    process.env.NEON_DATABASE_URL,
-  );
+  return isHbceDatabaseUrlConfigured();
 }
 
 export function describeHbceTransactionDatabase(): {
