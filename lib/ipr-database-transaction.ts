@@ -102,6 +102,26 @@ function normalizeError(
   error: unknown,
 ): string {
   if (error instanceof Error) {
+    const candidate =
+      error as Error & {
+        readonly code?: unknown;
+      };
+
+    const sqlStateCode =
+      typeof candidate.code === "string"
+      && /^[0-9A-Z]{5}$/.test(
+        candidate.code,
+      )
+        ? candidate.code
+        : null;
+
+    if (sqlStateCode) {
+      return (
+        `${error.message} `
+        + `[code ${sqlStateCode}]`
+      );
+    }
+
     return error.message;
   }
 
