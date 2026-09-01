@@ -36,6 +36,11 @@ import {
   type PlatformCoreCanonicalAuthorizationInput,
 } from "@/src/runtime/platform-core/canonical-authorization-builder";
 
+import {
+  buildPlatformCoreCanonicalExecutionGenesis,
+  type PlatformCoreCanonicalExecutionGenesisInput,
+} from "@/src/runtime/platform-core/canonical-execution-genesis-builder";
+
 export const RUNTIME_EXECUTION_PERSISTENCE_SERVICE_REVISION =
   "HBCE-RUNTIME-EXECUTION-PERSISTENCE-SERVICE-v1_0" as const;
 
@@ -73,6 +78,15 @@ export type RuntimeExecutionPersistenceRequest = {
    */
   canonicalAuthorizationSource:
     PlatformCoreCanonicalAuthorizationInput;
+
+  /**
+   * Explicit Platform Core canonical EXECUTION genesis source envelope.
+   *
+   * Authorization identity and binding commitments are taken only from
+   * the retained canonical AUTHORIZATION object.
+   */
+  canonicalExecutionGenesisSource:
+    PlatformCoreCanonicalExecutionGenesisInput;
 
   /**
    * Optional optimistic ledger-tip precondition.
@@ -387,9 +401,28 @@ export async function executeRuntimeAndPersist(
    * - it is not yet consumed;
    * - it is not yet bound to a canonical EXECUTION object.
    */
-  buildPlatformCoreCanonicalAuthorization(
-    request.canonicalAuthorizationSource,
-  );
+  const canonicalAuthorization =
+    buildPlatformCoreCanonicalAuthorization(
+      request.canonicalAuthorizationSource,
+    );
+
+  /*
+   * Build and retain the immutable PENDING/v1 canonical EXECUTION
+   * genesis before entering the legacy runtime boundary.
+   *
+   * execution_id remains explicitly caller supplied and is not derived
+   * from operationId, mission identifiers, legacy runtime output or
+   * persistent human authorization.
+   *
+   * No authorization consumption occurs during this migration step.
+   */
+  const canonicalExecutionGenesis =
+    buildPlatformCoreCanonicalExecutionGenesis(
+      request.canonicalExecutionGenesisSource,
+      canonicalAuthorization,
+    );
+
+  void canonicalExecutionGenesis;
 
   /*
    * Runtime execution remains synchronous and pure.

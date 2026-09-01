@@ -31,6 +31,10 @@ import type {
   PlatformCoreCanonicalAuthorizationInput,
 } from "@/src/runtime/platform-core/canonical-authorization-builder";
 
+import type {
+  PlatformCoreCanonicalExecutionGenesisInput,
+} from "@/src/runtime/platform-core/canonical-execution-genesis-builder";
+
 import {
   RuntimeOperationsPersistentAppendError,
 } from "@/src/runtime/operations/runtime-operations-persistent-append.service";
@@ -627,6 +631,119 @@ function buildRuntimeInput(
  * Canonical persistent authorization is derived through strict
  * PostgreSQL-backed verification.
  */
+
+/**
+ * Explicit synthetic Platform Core EXECUTION genesis source used only
+ * by this self-test route.
+ *
+ * This fixture is deterministic and intentionally independent from
+ * operationId, runNonce, mission identifiers and persistent human
+ * authorization. Matching action/request commitments are deterministic
+ * fixture values, not values derived from runtime execution.
+ */
+function buildSelfTestCanonicalExecutionGenesisSource():
+  PlatformCoreCanonicalExecutionGenesisInput {
+  return {
+    execution_id:
+      "EXE-SELF-TEST:EXECUTION-PERSISTENCE",
+
+    execution_engine_ref:
+      "ENGINE:JOKER-C2",
+
+    execution_action_sha256:
+      "d".repeat(64),
+
+    execution_request_sha256:
+      "e".repeat(64),
+
+    requested_at:
+      "2026-09-01T15:01:00.000Z",
+
+    precheck: {
+      evaluated_at:
+        "2026-09-01T15:01:01.000Z",
+
+      validity_state:
+        "VALID",
+
+      authority_usability_state:
+        "PASS",
+
+      dependency_binding_state:
+        "PASS",
+
+      iospace_binding_state:
+        "PASS",
+
+      enforcement_point_binding_state:
+        "PASS",
+
+      replay_state:
+        "AVAILABLE",
+
+      decision:
+        "ALLOW_EXECUTION",
+
+      evidence_reference:
+        "EVIDENCE:SELF-TEST:EXECUTION-PRECHECK",
+
+      authorization_consumption_atomic:
+        true,
+    },
+
+    state_before: {
+      observation_state:
+        "CAPTURED",
+
+      state_ref:
+        "STATE:SELF-TEST:BEFORE",
+
+      state_sha256:
+        "a".repeat(64),
+    },
+
+    state_after: {
+      observation_state:
+        "NOT_AVAILABLE",
+
+      state_ref:
+        null,
+
+      state_sha256:
+        null,
+    },
+
+    evidence_state:
+      "PRESENT",
+
+    evidence_reference:
+      "EVIDENCE:SELF-TEST:EXECUTION-GENESIS",
+
+    outcome_reference:
+      null,
+
+    consequence_reference:
+      null,
+
+    evt_reference:
+      null,
+
+    opc_reference:
+      null,
+
+    genealogy: {
+      cause:
+        "SELF_TEST_EXECUTION_GENESIS",
+
+      evidence_reference:
+        "EVIDENCE:SELF-TEST:EXECUTION-PRECHECK",
+
+      timestamp:
+        "2026-09-01T15:01:01.000Z",
+    },
+  };
+}
+
 async function countRowsByOperationHash(
   operationIdSha256: string,
 ): Promise<number> {
@@ -1072,6 +1189,9 @@ export async function POST(
     const canonicalAuthorizationSource =
       buildSelfTestCanonicalAuthorizationSource();
 
+    const canonicalExecutionGenesisSource =
+      buildSelfTestCanonicalExecutionGenesisSource();
+
     persistenceAttempted =
       true;
 
@@ -1086,6 +1206,8 @@ export async function POST(
             .authorization,
 
         canonicalAuthorizationSource,
+
+        canonicalExecutionGenesisSource,
 
         expectedTip: {
           sequence:
@@ -1218,6 +1340,8 @@ export async function POST(
             .authorization,
 
         canonicalAuthorizationSource,
+
+        canonicalExecutionGenesisSource,
 
         verification: {
           pageSize:
@@ -1359,6 +1483,8 @@ export async function POST(
             .authorization,
 
         canonicalAuthorizationSource,
+
+        canonicalExecutionGenesisSource,
 
         verification: {
           pageSize:
