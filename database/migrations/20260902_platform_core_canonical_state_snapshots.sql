@@ -41,7 +41,7 @@ CREATE TABLE public.hbce_platform_core_canonical_state_snapshots (
         ~ '^HBCE:STATE:OBSERVED:V1:SHA256:[0-9A-F]{64}$'
     ),
 
-  CONSTRAINT hbce_platform_core_canonical_state_snapshots_state_sha256_format
+  CONSTRAINT hbce_pc_canonical_state_snapshots_state_sha256_format
     CHECK (
       state_sha256
         ~ '^[0-9a-f]{64}$'
@@ -60,7 +60,7 @@ CREATE TABLE public.hbce_platform_core_canonical_state_snapshots (
       ) = state_sha256
     ),
 
-  CONSTRAINT hbce_platform_core_canonical_state_snapshots_canonical_state_nonempty
+  CONSTRAINT hbce_pc_canonical_state_snapshots_canonical_state_nonempty
     CHECK (
       octet_length(
         canonical_state_utf8
