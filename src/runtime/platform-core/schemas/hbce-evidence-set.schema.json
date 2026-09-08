@@ -1,0 +1,647 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://manuelcoletta1-source.github.io/hermeticum-bce-platform/schemas/hbce-evidence-set.schema.json",
+  "title": "HBCE Platform Core Evidence Set Schema v1",
+  "description": "Canonical HBCE Platform Core schema representing a bounded, identity-bound and authority-bound evidence aggregation record. An Evidence Set records the lifecycle and references necessary to reconstruct a controlled verification case. It does not by itself establish legal truth, regulated certification, public authority status, execution success or external confirmation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proto",
+    "kind",
+    "version",
+    "evidence_set_id",
+    "evidence_set_version",
+    "case_id",
+    "domain",
+    "target",
+    "owner_subject_ref",
+    "authority_ref",
+    "authority_version",
+    "authority_sha256",
+    "state",
+    "created_at",
+    "finalized_at",
+    "evidence_state",
+    "evidence_reference",
+    "control_references",
+    "observation_references",
+    "result_reference",
+    "artifact_references",
+    "external_confirmation_references",
+    "event_references",
+    "evt_reference",
+    "opc_reference",
+    "payload_sha256",
+    "append_only",
+    "genealogy",
+    "boundary"
+  ],
+  "properties": {
+    "proto": {
+      "type": "string",
+      "const": "HBCE-EVIDENCE-SET-v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "HBCE_CORE_EVIDENCE_SET"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "const": "v1"
+    },
+    "evidence_set_id": {
+      "type": "string",
+      "pattern": "^EVS-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Canonical Evidence Set identifier."
+    },
+    "evidence_set_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Append-only canonical revision of this Evidence Set."
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Domain-neutral case identifier. The case identifier does not determine schema kind."
+    },
+    "domain": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_:\\-.]*$",
+      "minLength": 3,
+      "maxLength": 128,
+      "description": "Controlled domain classification. Domain-specific semantics remain outside the generic Platform Core Evidence Set schema."
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_class",
+        "target_ref",
+        "system_ref"
+      ],
+      "properties": {
+        "target_class": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_:\\-.]*$",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "target_ref": {
+          "type": "string",
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "system_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_\\-:.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        }
+      }
+    },
+    "owner_subject_ref": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\-:.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the subject or organization to which the Evidence Set is bound. This field does not itself establish operational authority."
+    },
+    "authority_ref": {
+      "type": "string",
+      "pattern": "^AUT-[0-9A-Z:\\-_.]+$",
+      "minLength": 5,
+      "maxLength": 128,
+      "description": "Exact canonical Authority identifier applicable to this Evidence Set."
+    },
+    "authority_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "authority_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Hash commitment to the exact canonical Authority payload bound to this Evidence Set."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "CLOSED"
+      ],
+      "description": "Evidence Set lifecycle state. Lifecycle state is distinct from control assessment result."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "MISSING",
+        "NOT_APPLICABLE",
+        "UNKNOWN"
+      ]
+    },
+    "evidence_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "control_references": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_:\\-.]+$",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "observation_references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_:\\-.]+$",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "result_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160,
+      "description": "Reference to the assessment result. PASS, FAIL and CONDITIONAL are Result semantics and are not Evidence Set lifecycle states."
+    },
+    "artifact_references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_:\\-.]+$",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "external_confirmation_references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_:\\-.]+$",
+        "minLength": 3,
+        "maxLength": 160
+      },
+      "description": "External confirmations remain distinct from the canonical HBCE assessment result."
+    },
+    "event_references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_:\\-.]+$",
+        "minLength": 3,
+        "maxLength": 160
+      }
+    },
+    "evt_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "opc_reference": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_:\\-.]+$",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "payload_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Canonical object commitment under HBCE-PLATFORM-CORE-PAYLOAD-SHA256-v1."
+    },
+    "append_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "genealogy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "derived_from",
+        "previous_state",
+        "new_state",
+        "cause",
+        "evidence_reference",
+        "timestamp",
+        "hash"
+      ],
+      "properties": {
+        "derived_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^EVS-[0-9A-Z:\\-_.]+$",
+          "minLength": 5,
+          "maxLength": 128
+        },
+        "previous_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            null,
+            "OPEN",
+            "CLOSED"
+          ]
+        },
+        "new_state": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "CLOSED"
+          ]
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 240,
+          "description": "Controlled safe cause text or reference. Raw sensitive evidence must not be embedded merely for genealogy."
+        },
+        "evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z0-9_:\\-.]+$",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Genealogy anchor digest. For evidence_set_version = 1 it MUST equal authority_sha256. For evidence_set_version > 1 it MUST equal the exact immediately preceding Evidence Set payload_sha256. Cross-revision equality is enforced by the canonical runtime contract."
+        }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_minimization",
+        "reference_over_raw_evidence",
+        "identity_binding_required",
+        "authority_binding_required",
+        "evidence_set_not_authority",
+        "evidence_set_not_authorization",
+        "evidence_set_not_execution",
+        "evidence_set_not_outcome",
+        "result_separate_from_state",
+        "external_confirmation_separate_from_result",
+        "environment_issue_separate_from_control_result",
+        "analysis_not_canonical_evidence",
+        "closed_history_not_silently_mutable",
+        "domain_specific_semantics_in_adapters",
+        "unknown_not_pass",
+        "missing_evidence_not_verified",
+        "append_only_genealogy",
+        "no_regulated_certification_claim",
+        "no_public_authority_claim",
+        "fail_closed"
+      ],
+      "properties": {
+        "data_minimization": {
+          "const": true
+        },
+        "reference_over_raw_evidence": {
+          "const": true
+        },
+        "identity_binding_required": {
+          "const": true
+        },
+        "authority_binding_required": {
+          "const": true
+        },
+        "evidence_set_not_authority": {
+          "const": true
+        },
+        "evidence_set_not_authorization": {
+          "const": true
+        },
+        "evidence_set_not_execution": {
+          "const": true
+        },
+        "evidence_set_not_outcome": {
+          "const": true
+        },
+        "result_separate_from_state": {
+          "const": true
+        },
+        "external_confirmation_separate_from_result": {
+          "const": true
+        },
+        "environment_issue_separate_from_control_result": {
+          "const": true
+        },
+        "analysis_not_canonical_evidence": {
+          "const": true
+        },
+        "closed_history_not_silently_mutable": {
+          "const": true
+        },
+        "domain_specific_semantics_in_adapters": {
+          "const": true
+        },
+        "unknown_not_pass": {
+          "const": true
+        },
+        "missing_evidence_not_verified": {
+          "const": true
+        },
+        "append_only_genealogy": {
+          "const": true
+        },
+        "no_regulated_certification_claim": {
+          "const": true
+        },
+        "no_public_authority_claim": {
+          "const": true
+        },
+        "fail_closed": {
+          "const": true
+        }
+      }
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "OPEN"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "finalized_at": {
+            "const": null
+          },
+          "result_reference": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "CLOSED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "finalized_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result_reference": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_:\\-.]+$",
+            "minLength": 3,
+            "maxLength": 160
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_set_version": {
+            "const": 1
+          }
+        },
+        "required": [
+          "evidence_set_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "state": {
+            "const": "OPEN"
+          },
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "derived_from": {
+                "const": null
+              },
+              "previous_state": {
+                "const": null
+              },
+              "new_state": {
+                "const": "OPEN"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_set_version": {
+            "type": "integer",
+            "minimum": 2
+          }
+        },
+        "required": [
+          "evidence_set_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "derived_from": {
+                "type": "string",
+                "pattern": "^EVS-[0-9A-Z:\\-_.]+$"
+              },
+              "previous_state": {
+                "type": "string",
+                "enum": [
+                  "OPEN",
+                  "CLOSED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "const": "OPEN"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "new_state": {
+                "const": "OPEN"
+              }
+            },
+            "required": [
+              "new_state"
+            ]
+          }
+        },
+        "required": [
+          "genealogy"
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "const": "CLOSED"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "new_state": {
+                "const": "CLOSED"
+              }
+            },
+            "required": [
+              "new_state"
+            ]
+          }
+        },
+        "required": [
+          "genealogy"
+        ]
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "previous_state": {
+                "const": "CLOSED"
+              }
+            },
+            "required": [
+              "previous_state"
+            ]
+          }
+        },
+        "required": [
+          "genealogy"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "const": "CLOSED"
+          },
+          "genealogy": {
+            "type": "object",
+            "properties": {
+              "new_state": {
+                "const": "CLOSED"
+              }
+            },
+            "required": [
+              "new_state"
+            ]
+          }
+        },
+        "required": [
+          "state",
+          "genealogy"
+        ]
+      }
+    }
+  ]
+}

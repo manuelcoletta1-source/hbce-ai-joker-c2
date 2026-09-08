@@ -14,7 +14,7 @@ export const PLATFORM_CORE_CANONICAL_SOURCE_REPOSITORY =
   "hermeticum-bce-platform" as const;
 
 export const PLATFORM_CORE_CANONICAL_SOURCE_COMMIT =
-  "581c51a8f7a7f7e3fd098f79f53acca1c0353bfa" as const;
+  "ee5dd87d95ec4ce50274150e2d2ce6c763314a52" as const;
 
 export const PLATFORM_CORE_SCHEMA_SNAPSHOT_DIRECTORY =
   "src/runtime/platform-core/schemas" as const;
@@ -29,6 +29,7 @@ export const PLATFORM_CORE_SCHEMA_KINDS = [
   "CONSEQUENCE",
   "MATRIX_STATE",
   "FEEDBACK",
+  "EVIDENCE_SET",
 ] as const;
 
 export type PlatformCoreSchemaKind =
@@ -103,6 +104,13 @@ export const PLATFORM_CORE_CANONICAL_SCHEMAS = {
     sha256:
       "1e99b762635043b8bcde0d5b6f74f6dff092491151c9000373695dc8e696ea8b",
   },
+
+  EVIDENCE_SET: {
+    kind: "EVIDENCE_SET",
+    filename: "hbce-evidence-set.schema.json",
+    sha256:
+      "378204b65d574837436f075e0dff65532a3efbda356f79e7e0d8e264b274f5bc",
+  },
 } as const satisfies Record<
   PlatformCoreSchemaKind,
   PlatformCoreCanonicalSchemaDescriptor
@@ -138,7 +146,7 @@ export function listPlatformCoreCanonicalSchemas():
 
 export function assertPlatformCoreCanonicalSchemaRegistryInvariant():
   void {
-  if (PLATFORM_CORE_CANONICAL_SCHEMA_COUNT !== 9) {
+  if (PLATFORM_CORE_CANONICAL_SCHEMA_COUNT !== 10) {
     throw new Error(
       "HBCE_PLATFORM_CORE_SCHEMA_REGISTRY_COUNT_INVALID",
     );

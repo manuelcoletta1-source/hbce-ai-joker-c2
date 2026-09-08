@@ -23,7 +23,7 @@ export const PLATFORM_CORE_CANONICAL_SCHEMA_COMPILER_PROTOCOL =
 /*
  * P002-D030 compiler contract.
  *
- * All nine canonical schemas are valid JSON Schema
+ * All ten canonical schemas are valid JSON Schema
  * Draft 2020-12 documents.
  *
  * Five schemas use `properties` inside conditional
@@ -221,7 +221,7 @@ function assertPlatformCoreCompilerResultInvariant(
         "HBCE_PLATFORM_CORE_SCHEMA_COMPILER_INVARIANT_FAILED",
 
       message:
-        "Platform Core compiler did not produce exactly nine validators",
+        "Platform Core compiler did not produce exactly ten validators",
     });
   }
 
@@ -269,7 +269,7 @@ export function compilePlatformCoreCanonicalSchemas(
         "HBCE_PLATFORM_CORE_SCHEMA_COMPILER_INVARIANT_FAILED",
 
       message:
-        "Canonical byte loader did not return exactly nine schemas",
+        "Canonical byte loader did not return exactly ten schemas",
     });
   }
 
