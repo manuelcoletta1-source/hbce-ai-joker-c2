@@ -1,0 +1,83 @@
+{
+  "fixture_protocol": "HBCE-GOLDEN-CASE-v1",
+  "fixture_role": "acceptance_reference",
+  "case_id": "EXT-CASE-0001-OMNILINK",
+  "domain": "external_system_validation",
+  "target": {
+    "name": "OmniLink mobile bridge",
+    "target_class": "external_system",
+    "target_ref": "TARGET:OMNILINK:MOBILE-BRIDGE",
+    "system_ref": "SYSTEM:OMNILINK"
+  },
+  "control": {
+    "id": "BRIDGE-RESTART-IDENTITY",
+    "reference": "CONTROL:BRIDGE-RESTART-IDENTITY",
+    "property": "(bridge_instance_id=A, seq=N) != (bridge_instance_id=B, seq=N)",
+    "expected_condition": "transaction identity is scoped by bridge_instance_id + seq"
+  },
+  "finding": {
+    "classification": "restart_boundary_identity_ambiguity",
+    "statement": "seq alone is ambiguous across bridge process incarnations"
+  },
+  "remediation": {
+    "bridge_instance_id_generation": "immutable UUIDv4 per process",
+    "canonical_transaction_identity": [
+      "bridge_instance_id",
+      "seq"
+    ]
+  },
+  "assessment": {
+    "reference": "RESULT:EXT-CASE-0001-OMNILINK",
+    "result": "PASS"
+  },
+  "external_confirmation": {
+    "reference": "EXTERNAL_CONFIRMATION:EXT-CASE-0001-OMNILINK",
+    "confirmed": true
+  },
+  "further_action": "NONE",
+  "environment_issue": {
+    "issue": "omnilink-lib unavailable in independent local environment",
+    "separate": true,
+    "non_blocking": true,
+    "affects_control_result": false
+  },
+  "references": {
+    "evidence_set": "EVS-EXT-CASE-0001-OMNILINK",
+    "evidence": "EVIDENCE:EXT-CASE-0001-OMNILINK",
+    "control": "CONTROL:BRIDGE-RESTART-IDENTITY",
+    "result": "RESULT:EXT-CASE-0001-OMNILINK",
+    "external_confirmation": "EXTERNAL_CONFIRMATION:EXT-CASE-0001-OMNILINK"
+  },
+  "canonical_projection": {
+    "evidence_set_id": "EVS-EXT-CASE-0001-OMNILINK",
+    "case_id": "EXT-CASE-0001-OMNILINK",
+    "domain": "external_system_validation",
+    "target": {
+      "target_class": "external_system",
+      "target_ref": "TARGET:OMNILINK:MOBILE-BRIDGE",
+      "system_ref": "SYSTEM:OMNILINK"
+    },
+    "state": "CLOSED",
+    "evidence_state": "PRESENT",
+    "evidence_reference": "EVIDENCE:EXT-CASE-0001-OMNILINK",
+    "control_references": [
+      "CONTROL:BRIDGE-RESTART-IDENTITY"
+    ],
+    "observation_references": [],
+    "result_reference": "RESULT:EXT-CASE-0001-OMNILINK",
+    "artifact_references": [],
+    "external_confirmation_references": [
+      "EXTERNAL_CONFIRMATION:EXT-CASE-0001-OMNILINK"
+    ],
+    "event_references": [],
+    "evt_reference": null,
+    "opc_reference": null
+  },
+  "boundary": {
+    "case_not_architecture": true,
+    "state_not_result": true,
+    "outcome_not_result_by_assumption": true,
+    "external_confirmation_not_result": true,
+    "environment_issue_not_control_result": true
+  }
+}
