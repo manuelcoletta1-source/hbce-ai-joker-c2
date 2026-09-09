@@ -152,6 +152,14 @@
         "issuer_ref"
       ],
       "properties": {
+        "source_sha256": {
+          "description": "Optional SHA-256 commitment for the controlled Mandate issuing-source artifact. Production-runtime genesis semantics require this value to be non-null.",
+          "pattern": "^[a-f0-9]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "source_type": {
           "type": "string",
           "enum": [
