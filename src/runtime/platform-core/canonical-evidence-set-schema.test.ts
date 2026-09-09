@@ -286,7 +286,7 @@ describe(
         expect(
           PLATFORM_CORE_CANONICAL_SOURCE_COMMIT,
         ).toBe(
-          "ee5dd87d95ec4ce50274150e2d2ce6c763314a52",
+          "376e83950e0a46e620dd03dd4301453b4eb7a6c6",
         );
       },
     );

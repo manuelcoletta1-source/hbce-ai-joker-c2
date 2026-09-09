@@ -2,7 +2,7 @@
   "protocol": "HBCE-PLATFORM-CORE-CANONICAL-SCHEMA-SNAPSHOT-v1",
   "classification": "CANONICAL_SCHEMA_SNAPSHOT",
   "canonical_repository": "hermeticum-bce-platform",
-  "canonical_commit": "ee5dd87d95ec4ce50274150e2d2ce6c763314a52",
+  "canonical_commit": "376e83950e0a46e620dd03dd4301453b4eb7a6c6",
   "runtime_repository": "hbce-ai-joker-c2",
   "runtime_branch": "p002/platform-core-runtime",
   "policy": {
@@ -13,7 +13,7 @@
     "fail_closed_on_identity_mismatch": true
   },
   "schemas": {
-    "hbce-mandate.schema.json": "0bda1fb9ff2a32a3f563cac1cd7cae0a7cece93406ac3124a6c23d2df520aa48",
+    "hbce-mandate.schema.json": "b03b81670a77505e86d4f671056169ec7d4ee364843596e44944a0c3cfa3b377",
     "hbce-capability.schema.json": "76a0e671ae8c5a0d34b35f295886a0683aaae176f4ae8dece1c04cc5ca4228b3",
     "hbce-authority.schema.json": "16f087fb1d4aaa96abf34e2795b01475f2f4d30c823492fcdd255482882f8615",
     "hbce-authorization.schema.json": "5dc5774c17ca905ac4a23632458a0fd5e688d5dbe86443a6f129328d6f375599",

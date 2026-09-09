@@ -14,7 +14,7 @@ export const PLATFORM_CORE_CANONICAL_SOURCE_REPOSITORY =
   "hermeticum-bce-platform" as const;
 
 export const PLATFORM_CORE_CANONICAL_SOURCE_COMMIT =
-  "ee5dd87d95ec4ce50274150e2d2ce6c763314a52" as const;
+  "376e83950e0a46e620dd03dd4301453b4eb7a6c6" as const;
 
 export const PLATFORM_CORE_SCHEMA_SNAPSHOT_DIRECTORY =
   "src/runtime/platform-core/schemas" as const;
@@ -46,7 +46,7 @@ export const PLATFORM_CORE_CANONICAL_SCHEMAS = {
     kind: "MANDATE",
     filename: "hbce-mandate.schema.json",
     sha256:
-      "0bda1fb9ff2a32a3f563cac1cd7cae0a7cece93406ac3124a6c23d2df520aa48",
+      "b03b81670a77505e86d4f671056169ec7d4ee364843596e44944a0c3cfa3b377",
   },
 
   CAPABILITY: {
