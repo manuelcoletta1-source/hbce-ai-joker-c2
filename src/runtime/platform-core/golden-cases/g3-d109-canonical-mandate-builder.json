@@ -1,0 +1,96 @@
+{
+  "fixture_protocol": "HBCE-GOLDEN-CASE-v1",
+  "fixture_role": "acceptance_reference",
+  "case_id": "G3-D109",
+  "domain": "platform_core_runtime_validation",
+  "target": {
+    "name": "HBCE Platform Core canonical mandate builder",
+    "target_class": "runtime_component",
+    "target_ref": "TARGET:HBCE:PLATFORM-CORE:CANONICAL-MANDATE-BUILDER",
+    "system_ref": "SYSTEM:HBCE:PLATFORM-CORE"
+  },
+  "control": {
+    "id": "CANONICAL-MANDATE-BUILDER",
+    "reference": "CONTROL:G3-D109",
+    "property": "validated source and test identities bind the canonical mandate builder to the exact committed and published runtime state",
+    "expected_condition": "typecheck PASS; MB01-MB21 21/21 PASS; build PASS with authorized reuse; local, tracking and remote canonical commit aligned"
+  },
+  "finding": {
+    "classification": "canonical_mandate_builder_validated",
+    "statement": "G3-D109 closed with zero final closure gaps and exact source/test blob and SHA-256 identities"
+  },
+  "remediation": {
+    "required": false,
+    "statement": "NONE_REQUIRED"
+  },
+  "assessment": {
+    "reference": "RESULT:G3-D109",
+    "result": "PASS"
+  },
+  "external_confirmation": {
+    "reference": "EXTERNAL_CONFIRMATION:G3-D109:REMOTE-REF",
+    "confirmed": true
+  },
+  "further_action": "NONE",
+  "environment_issue": {
+    "issue": "R1V_EPHEMERAL_AUDIT_ARTIFACT_LOSS_RECONCILED",
+    "separate": true,
+    "non_blocking": true,
+    "affects_control_result": false
+  },
+  "references": {
+    "evidence_set": "EVS-G3-D109",
+    "evidence": "EVIDENCE:G3-D109",
+    "control": "CONTROL:G3-D109",
+    "result": "RESULT:G3-D109",
+    "external_confirmation": "EXTERNAL_CONFIRMATION:G3-D109:REMOTE-REF",
+    "canonical_commit": "fcc0890652ca0a1343212d68e61bb50bd4b626d4",
+    "canonical_tree": "c623ac10bf31a827982d581465f9d13dce5f6d2e",
+    "canonical_parent": "aa550830a90618ed758fa37185de86f9c53d47e6",
+    "source_blob": "d23051dc18ccdcdfaf6dfbf5677d6469d4d0a561",
+    "source_sha256": "5796c30d4c1567c126011ba12142f559f5a8a42c9206418210cddf970f6a34a9",
+    "test_blob": "b98110c9b53d3d26220660eafa6324351afcce01",
+    "test_sha256": "c9c0a91ee78688105879d62d80bd05a313ee7dafeee6f9fbdf7b4204a2f106f6",
+    "final_closure_manifest_sha256": "cff6feb4d9216ea65bed2328b1f3aaefebeedb04af8705167fadef93933fb978",
+    "registration_surface_manifest_sha256": "ea97b90757a02613558d8e9cef66909999609680ba14d72070d7c6e19e6a95c7",
+    "registration_basis_sha256": "99bb9844357635e90fe9df81617ace55d904f939df6d2c512ed08530d89a82ec",
+    "publication_commit_list_sha256": "e6d10f66125f49f41fee2401b820b01d92f17da7aa98d6c547989b565409a7a8",
+    "publication_range_patch_sha256": "64d32bd39b2b091e8d5bffbc2252e510e16816fa3caac47c916eb3b2ae32077f",
+    "build_manifest_sha256": "42fe23def1a12d82dfe22822a88f8241ebb7b768c6d8da8b3fd1b2b7d897f93f",
+    "typecheck_manifest_sha256": "e08687e5e8d8706a096f5c60db1d339de8a5c203fe0d3b52c5d6f72d6177d577",
+    "test_manifest_sha256": "c29fe67a194c6fb90ea2e8892c2e44db490b9457bb7b1a656815963b67de8df7",
+    "build_reuse_manifest_sha256": "89fb2248967a425f8408603762e17cd2956bdc1e89f219c3e1f0e5d3f88ddbda"
+  },
+  "canonical_projection": {
+    "evidence_set_id": "EVS-G3-D109",
+    "case_id": "G3-D109",
+    "domain": "platform_core_runtime_validation",
+    "target": {
+      "target_class": "runtime_component",
+      "target_ref": "TARGET:HBCE:PLATFORM-CORE:CANONICAL-MANDATE-BUILDER",
+      "system_ref": "SYSTEM:HBCE:PLATFORM-CORE"
+    },
+    "state": "CLOSED",
+    "evidence_state": "PRESENT",
+    "evidence_reference": "EVIDENCE:G3-D109",
+    "control_references": [
+      "CONTROL:G3-D109"
+    ],
+    "observation_references": [],
+    "result_reference": "RESULT:G3-D109",
+    "artifact_references": [],
+    "external_confirmation_references": [
+      "EXTERNAL_CONFIRMATION:G3-D109:REMOTE-REF"
+    ],
+    "event_references": [],
+    "evt_reference": null,
+    "opc_reference": null
+  },
+  "boundary": {
+    "case_not_architecture": true,
+    "state_not_result": true,
+    "outcome_not_result_by_assumption": true,
+    "external_confirmation_not_result": true,
+    "environment_issue_not_control_result": true
+  }
+}
