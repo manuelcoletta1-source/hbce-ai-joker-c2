@@ -12,6 +12,11 @@ import {
   validatePlatformCoreCanonicalSchema,
 } from "./canonical-schema-validator";
 
+import type {
+  PlatformCoreCanonicalAuthority as
+    PlatformCoreBuilderCanonicalAuthority,
+} from "./canonical-authority-builder";
+
 export const PLATFORM_CORE_AUTHORITY_REPOSITORY_PROTOCOL =
   "HBCE-PLATFORM-CORE-AUTHORITY-REPOSITORY-v1" as const;
 
@@ -48,22 +53,7 @@ export type PlatformCoreAuthorityState =
   (typeof PLATFORM_CORE_AUTHORITY_STATES)[number];
 
 export type PlatformCoreCanonicalAuthority =
-  Readonly<
-    Record<string, unknown>
-    & {
-      readonly authority_id:
-        string;
-
-      readonly authority_version:
-        number;
-
-      readonly payload_sha256:
-        string;
-
-      readonly state:
-        PlatformCoreAuthorityState;
-    }
-  >;
+  PlatformCoreBuilderCanonicalAuthority;
 
 export type PlatformCoreAuthorityRepositoryErrorCode =
   | "INVALID_INPUT"
@@ -248,6 +238,35 @@ function isPlainRecord(
     || prototype ===
       null
   );
+}
+
+function assertCanonicalAuthoritySchema(
+  value:
+    unknown,
+  errorCode:
+    Extract<
+      PlatformCoreAuthorityRepositoryErrorCode,
+      | "STATIC_SCHEMA_VALIDATION_FAILED"
+      | "PERSISTED_RECORD_INVALID"
+    >,
+  message:
+    string,
+): asserts value is
+  PlatformCoreCanonicalAuthority {
+  const validation =
+    validatePlatformCoreCanonicalSchema(
+      "AUTHORITY",
+      value,
+    );
+
+  if (
+    !validation.valid
+  ) {
+    failClosed(
+      errorCode,
+      message,
+    );
+  }
 }
 
 function deepFreeze<T>(
@@ -482,20 +501,11 @@ function assertCanonicalInput(
     );
   }
 
-  const validation =
-    validatePlatformCoreCanonicalSchema(
-      "AUTHORITY",
-      value,
-    );
-
-  if (
-    !validation.valid
-  ) {
-    failClosed(
-      "STATIC_SCHEMA_VALIDATION_FAILED",
-      "Canonical Authority input failed static schema validation.",
-    );
-  }
+  assertCanonicalAuthoritySchema(
+    value,
+    "STATIC_SCHEMA_VALIDATION_FAILED",
+    "Canonical Authority input failed static schema validation.",
+  );
 
   let hashValid:
     boolean;
@@ -579,20 +589,11 @@ function deriveStableMaterial(
         value.payload_sha256,
     };
 
-  const validation =
-    validatePlatformCoreCanonicalSchema(
-      "AUTHORITY",
-      reconstructed,
-    );
-
-  if (
-    !validation.valid
-  ) {
-    failClosed(
-      "STATIC_SCHEMA_VALIDATION_FAILED",
-      "Reconstructed canonical Authority failed static schema validation.",
-    );
-  }
+  assertCanonicalAuthoritySchema(
+    reconstructed,
+    "STATIC_SCHEMA_VALIDATION_FAILED",
+    "Reconstructed canonical Authority failed static schema validation.",
+  );
 
   let hashValid:
     boolean;
@@ -645,8 +646,7 @@ function deriveStableMaterial(
 
   const canonical =
     deepFreeze(
-      reconstructed as
-        PlatformCoreCanonicalAuthority,
+      reconstructed,
     );
 
   assertAuthorityId(
@@ -816,20 +816,11 @@ function decodeAuthorityRow(
         payloadSha256,
     };
 
-  const validation =
-    validatePlatformCoreCanonicalSchema(
-      "AUTHORITY",
-      reconstructed,
-    );
-
-  if (
-    !validation.valid
-  ) {
-    failClosed(
-      "PERSISTED_RECORD_INVALID",
-      "Persisted Authority failed static schema validation.",
-    );
-  }
+  assertCanonicalAuthoritySchema(
+    reconstructed,
+    "PERSISTED_RECORD_INVALID",
+    "Persisted Authority failed static schema validation.",
+  );
 
   let hashValid:
     boolean;
@@ -882,8 +873,7 @@ function decodeAuthorityRow(
 
   const canonical =
     deepFreeze(
-      reconstructed as
-        PlatformCoreCanonicalAuthority,
+      reconstructed,
     );
 
   if (
