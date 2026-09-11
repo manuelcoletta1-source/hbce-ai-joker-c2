@@ -70,6 +70,7 @@ export type HbceApiScope =
   | "v1:model-usage:read"
   | "v1:openapi:read"
   | "v1:self-test:read"
+  | "v1:runtime:execute"
   | "v1:source-intelligence:read"
   | "v1:audit:export"
   | "v1:model-usage:export"
@@ -269,6 +270,7 @@ const ENDPOINT_SCOPE_MAP: ReadonlyArray<{
   { method: "GET", pattern: /^\/api\/v1\/model-usage\/[^/]+\/?$/, scopes: ["v1:model-usage:read"] },
   { method: "GET", pattern: /^\/api\/v1\/openapi\/?$/, scopes: ["v1:openapi:read"] },
   { method: "GET", pattern: /^\/api\/v1\/self-test\/?$/, scopes: ["v1:self-test:read"] },
+  { method: "POST", pattern: /^\/api\/v1\/runtime\/execute\/?$/, scopes: ["v1:runtime:execute"] },
   { method: "GET", pattern: /^\/api\/v1\/source-intelligence\/?$/, scopes: ["v1:source-intelligence:read"] }
 ];
 
