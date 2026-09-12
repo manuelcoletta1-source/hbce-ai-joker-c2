@@ -13,7 +13,8 @@ import {
 import {
   describeDefaultIprAuthStore,
   getDefaultIprAuthStore,
-  getPublicSessionFromStoredSession
+  getPublicSessionFromStoredSession,
+  verifyDatabasePersistentIprSessionTokenReadOnly,
 } from "./ipr-session-store";
 
 import type {
@@ -27,6 +28,7 @@ import {
   IPR_ACCOUNT_STORE_BOUNDARY,
   describeDefaultIprAccountStore,
   getDefaultIprAccountStore,
+  getDatabasePersistentIprAccountProfileReadOnly,
   toIprHandoffPayloadFromAccountProfile,
   toPublicIprAccountProfile
 } from "./ipr-account-store";
@@ -901,6 +903,102 @@ export async function resolveIprAccountSessionFromRequestAsync(
     accountProfile: profileLookup.profile,
     profileLookup: profileLookup.diagnostic,
     mode: profileLookup.diagnostic.matchedMode || "ASYNC_DATABASE_RESTORE"
+  });
+}
+
+export async function resolveIprAuthSessionReadOnly(
+  req: NextRequest
+): Promise<IprAccountSessionResolution> {
+  const token = req.cookies.get(IPR_AUTH_COOKIE_NAME)?.value || "";
+
+  if (!token) {
+    return buildUnauthenticatedResolution({
+      reason: "SESSION_COOKIE_MISSING",
+      mode: "ASYNC_DATABASE_RESTORE"
+    });
+  }
+
+  const verification =
+    await verifyDatabasePersistentIprSessionTokenReadOnly(token);
+
+  if (!verification.ok || !verification.session) {
+    return buildUnauthenticatedResolution({
+      reason: toInactiveReason(verification.reason),
+      mode: "ASYNC_DATABASE_RESTORE",
+      session: toPublicSessionOrNull(verification.session)
+    });
+  }
+
+  const candidates = buildProfileLookupCandidates(
+    verification.session as RuntimeSessionLookupSource
+  );
+  const attempts: IprAccountProfileLookupAttempt[] = [];
+
+  for (const candidate of candidates) {
+    const strategy =
+      candidate.strategy === "humanIpr" ||
+      candidate.strategy === "accountId" ||
+      candidate.strategy === "profileId" ||
+      candidate.strategy === "certificateId" ||
+      candidate.strategy === "cardSerial"
+        ? candidate.strategy
+        : null;
+
+    if (!strategy) {
+      continue;
+    }
+
+    const profile =
+      await getDatabasePersistentIprAccountProfileReadOnly({
+        strategy,
+        value: candidate.value
+      });
+
+    const attempt: IprAccountProfileLookupAttempt = {
+      strategy,
+      method: "getDatabasePersistentIprAccountProfileReadOnly",
+      mode: "ASYNC_DATABASE_RESTORE",
+      keyHash: keyHash(candidate.value),
+      found: Boolean(profile)
+    };
+
+    attempts.push(attempt);
+
+    if (profile) {
+      return buildAuthenticatedResolution({
+        session: verification.session,
+        accountProfile: profile,
+        profileLookup: {
+          attempted: true,
+          found: true,
+          matchedStrategy: strategy,
+          matchedMethod: "getDatabasePersistentIprAccountProfileReadOnly",
+          matchedMode: "ASYNC_DATABASE_RESTORE",
+          matchedKeyHash: attempt.keyHash,
+          attempts,
+          boundary: IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+        },
+        mode: "ASYNC_DATABASE_RESTORE"
+      });
+    }
+  }
+
+  return buildUnauthenticatedResolution({
+    reason: "IPR_ACCOUNT_PROFILE_NOT_FOUND",
+    mode: "ASYNC_DATABASE_RESTORE",
+    session: getPublicSessionFromStoredSession(verification.session),
+    humanIpr: verification.session.humanIpr,
+    runtimeIpr: verification.session.runtimeIpr,
+    profileLookup: {
+      attempted: attempts.length > 0,
+      found: false,
+      matchedStrategy: null,
+      matchedMethod: null,
+      matchedMode: null,
+      matchedKeyHash: null,
+      attempts,
+      boundary: IPR_ACCOUNT_PROFILE_LOOKUP_BOUNDARY
+    }
   });
 }
 

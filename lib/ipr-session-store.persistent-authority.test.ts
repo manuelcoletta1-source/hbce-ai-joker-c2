@@ -32,6 +32,9 @@ vi.mock(
       mockDatabaseConfigured,
 
     queryHbceDatabase:
+      mockQueryDatabase,
+
+    queryHbceDatabaseWithoutSchemaInitialization:
       mockQueryDatabase
   })
 );
@@ -39,7 +42,8 @@ vi.mock(
 
 import {
   getDatabasePersistentIprAuthStore,
-  getProcessIprAuthStore
+  getProcessIprAuthStore,
+  verifyDatabasePersistentIprSessionTokenReadOnly
 } from "@/lib/ipr-session-store";
 
 
@@ -329,3 +333,85 @@ describe(
     );
   }
 );
+
+
+describe("DATABASE_PERSISTENT read-only session verification", () => {
+  const row = (overrides: Record<string, unknown> = {}) => ({
+    session_id: "HBCE-SESSION-READ-ONLY-AUTHORITY-TEST",
+    human_ipr: HUMAN_IPR,
+    runtime_ipr: "IPR-AI-0001",
+    token_hash: "HBCE-TEST-TOKEN-HASH",
+    status: "ACTIVE",
+    created_at: "2026-08-28T20:00:00.000Z",
+    expires_at: "2099-08-28T20:00:00.000Z",
+    revoked_at: null,
+    last_seen_at: null,
+    device_label: null,
+    user_agent_hash: null,
+    ip_address_hash: null,
+    session_payload: { source: "HBCE_TEST_READ_ONLY_SESSION" },
+    legal_certification: false,
+    ...overrides
+  });
+
+  const expectSelectOnly = () => {
+    expect(mockQueryDatabase).toHaveBeenCalledTimes(1);
+    const sql = String(mockQueryDatabase.mock.calls[0]?.[0] || "");
+    expect(sql.trim().startsWith("SELECT")).toBe(true);
+    expect(sql).not.toMatch(/\b(INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE)\b/i);
+  };
+
+  it("authenticates active session with SELECT only and no process-session hydration", async () => {
+    mockQueryDatabase.mockResolvedValueOnce({ ok: true, rows: [row()] });
+    const result = await verifyDatabasePersistentIprSessionTokenReadOnly(TOKEN);
+    expect(result).toMatchObject({ ok: true, authenticated: true, reason: "SESSION_ACTIVE" });
+    expectSelectOnly();
+    expect(getProcessIprAuthStore().verifySessionToken(TOKEN)).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_NOT_FOUND"
+    });
+  });
+
+  it("denies expired session without expiry write", async () => {
+    mockQueryDatabase.mockResolvedValueOnce({
+      ok: true,
+      rows: [row({ expires_at: "2000-01-01T00:00:00.000Z" })]
+    });
+    const result = await verifyDatabasePersistentIprSessionTokenReadOnly(TOKEN);
+    expect(result).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_EXPIRED",
+      session: { status: "EXPIRED" }
+    });
+    expectSelectOnly();
+  });
+
+  it("denies revoked session without database mutation", async () => {
+    mockQueryDatabase.mockResolvedValueOnce({
+      ok: true,
+      rows: [row({ status: "REVOKED", revoked_at: "2026-09-11T18:00:00.000Z" })]
+    });
+    const result = await verifyDatabasePersistentIprSessionTokenReadOnly(TOKEN);
+    expect(result).toMatchObject({
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_REVOKED"
+    });
+    expectSelectOnly();
+  });
+
+  it("fails closed on database error even with active process fallback", async () => {
+    seedProcessFallback();
+    mockQueryDatabase.mockResolvedValueOnce({
+      ok: false,
+      rows: [],
+      error: "HBCE_TEST_READ_ONLY_DATABASE_FAILURE"
+    });
+    await expect(
+      verifyDatabasePersistentIprSessionTokenReadOnly(TOKEN)
+    ).rejects.toThrow("HBCE_TEST_READ_ONLY_DATABASE_FAILURE");
+    expectSelectOnly();
+  });
+});

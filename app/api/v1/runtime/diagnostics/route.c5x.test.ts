@@ -25,7 +25,14 @@ const mocks = vi.hoisted(() => ({
     vi.fn(),
 
   resetIprIpAfterSuccessAsync:
+    vi.fn(),
+
+  resolveReadOnly:
+    vi.fn(),
+
+  inspectPhysicalSchema:
     vi.fn()
+
 }));
 
 
@@ -33,7 +40,19 @@ vi.mock(
   "@/lib/ipr-auth-session-resolver",
   () => ({
     resolveIprAccountSessionFromRequestAsync:
-      mocks.resolveSession
+      mocks.resolveSession,
+
+    resolveIprAuthSessionReadOnly:
+      mocks.resolveReadOnly
+  })
+);
+
+
+vi.mock(
+  "@/lib/ipr-database-physical-proof",
+  () => ({
+    inspectIprDatabasePhysicalSchema:
+      mocks.inspectPhysicalSchema
   })
 );
 
@@ -614,6 +633,166 @@ describe(
         expect(
           body.legalCertification
         ).toBe(false);
+      }
+    );
+  }
+);
+
+
+describe(
+  "physical-schema-proof dedicated read-only auth integration",
+  () => {
+    function resetPhysicalAuthMocks() {
+      mocks.resolveSession.mockReset();
+      mocks.resolveReadOnly.mockReset();
+      mocks.inspectPhysicalSchema.mockReset();
+    }
+
+    function physicalRequest() {
+      return new NextRequest(
+        "https://hbce.example/api/v1/runtime/diagnostics?mode=physical-schema-proof",
+        { method: "GET" }
+      );
+    }
+
+    function physicalProof() {
+      return {
+        ok: true,
+        status: "PHYSICAL_SCHEMA_PROOF_PASS",
+        revision: "HBCE-IPR-DATABASE-PHYSICAL-PROOF-v1_0",
+        targetSchemaVersion: "HBCE-IPR-DB-v1.11",
+        targetTable:
+          "ipr_onboarding_pre_profile_policy_records",
+        queryMode: "NO_AUTO_SCHEMA",
+        checkedAt: "2026-09-12T00:00:00.000Z",
+        checks: [],
+        failedChecks: [],
+        authority: "PHYSICAL_SCHEMA_EVIDENCE_ONLY",
+        databaseMutation: false,
+        sessionCreated: false,
+        runtimeAuthorized: false,
+        profilePersisted: false,
+        routeActivated: false,
+        legalCertification: false
+      };
+    }
+
+    it(
+      "uses dedicated read-only resolver only for physical-schema-proof",
+      async () => {
+        resetPhysicalAuthMocks();
+        mocks.resolveReadOnly.mockResolvedValue(
+          authenticatedResolution()
+        );
+        mocks.resolveSession.mockRejectedValue(
+          new Error(
+            "HBCE_TEST_GENERIC_RESOLVER_MUST_NOT_RUN"
+          )
+        );
+        mocks.inspectPhysicalSchema.mockResolvedValue(
+          physicalProof()
+        );
+
+        const request=physicalRequest();
+        const response=await GET(request);
+
+        expect(response.status).toBe(200);
+        expect(mocks.resolveReadOnly).toHaveBeenCalledTimes(1);
+        expect(mocks.resolveReadOnly).toHaveBeenCalledWith(request);
+        expect(mocks.resolveSession).not.toHaveBeenCalled();
+        expect(mocks.inspectPhysicalSchema).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it(
+      "fails physical-schema-proof closed with 401 before proof execution",
+      async () => {
+        resetPhysicalAuthMocks();
+        mocks.resolveReadOnly.mockResolvedValue({
+          runtimeAuthorized: false
+        });
+
+        const response=await GET(physicalRequest());
+        const body=await response.json();
+
+        expect(response.status).toBe(401);
+        expect(body.reason).toBe("AUTHENTICATION_REQUIRED");
+        expect(mocks.resolveSession).not.toHaveBeenCalled();
+        expect(mocks.inspectPhysicalSchema).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "keeps a supported non-physical mode on the generic resolver only",
+      async () => {
+        resetPhysicalAuthMocks();
+        mocks.resolveSession.mockRejectedValueOnce(
+          new Error(
+            "HBCE_TEST_GENERIC_NON_PHYSICAL_SELECTED"
+          )
+        );
+
+        const request=new NextRequest(
+          "https://hbce.example/api/v1/runtime/diagnostics?mode=auth-rate-limit-runtime-proof",
+          { method: "GET" }
+        );
+
+        await expect(GET(request)).rejects.toThrow(
+          "HBCE_TEST_GENERIC_NON_PHYSICAL_SELECTED"
+        );
+
+        expect(mocks.resolveSession).toHaveBeenCalledTimes(1);
+        expect(mocks.resolveReadOnly).not.toHaveBeenCalled();
+        expect(mocks.inspectPhysicalSchema).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "keeps default mode on the generic resolver only",
+      async () => {
+        resetPhysicalAuthMocks();
+        mocks.resolveSession.mockRejectedValueOnce(
+          new Error(
+            "HBCE_TEST_GENERIC_DEFAULT_SELECTED"
+          )
+        );
+
+        const request=new NextRequest(
+          "https://hbce.example/api/v1/runtime/diagnostics",
+          { method: "GET" }
+        );
+
+        await expect(GET(request)).rejects.toThrow(
+          "HBCE_TEST_GENERIC_DEFAULT_SELECTED"
+        );
+
+        expect(mocks.resolveSession).toHaveBeenCalledTimes(1);
+        expect(mocks.resolveReadOnly).not.toHaveBeenCalled();
+        expect(mocks.inspectPhysicalSchema).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "preserves generic authentication before unsupported mode returns 400",
+      async () => {
+        resetPhysicalAuthMocks();
+        mocks.resolveSession.mockResolvedValue(
+          authenticatedResolution()
+        );
+
+        const request=new NextRequest(
+          "https://hbce.example/api/v1/runtime/diagnostics?mode=unsupported-test-mode",
+          { method: "GET" }
+        );
+
+        const response=await GET(request);
+        const body=await response.json();
+
+        expect(mocks.resolveSession).toHaveBeenCalledTimes(1);
+        expect(mocks.resolveReadOnly).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        expect(body.reason).toBe("UNSUPPORTED_DIAGNOSTIC_MODE");
+        expect(mocks.inspectPhysicalSchema).not.toHaveBeenCalled();
       }
     );
   }

@@ -10,7 +10,8 @@ import {
 import {
   describeDefaultHbceDatabase,
   isHbceDatabaseConfigured,
-  queryHbceDatabase
+  queryHbceDatabase,
+  queryHbceDatabaseWithoutSchemaInitialization,
 } from "./ipr-database";
 
 export type IprAuthStoreKind =
@@ -1930,6 +1931,85 @@ class ExternalAdapterPlaceholderIprAuthStore implements IprAuthStoreAdapter {
   ): Promise<IprAuthStoredSession | null> {
     return this.revokeSession(sessionId);
   }
+}
+
+export async function verifyDatabasePersistentIprSessionTokenReadOnly(
+  token: string
+): Promise<IprSessionLookupResult> {
+  assertDatabaseConfigured();
+
+  const tokenHash = hashIprSessionToken(assertToken(token));
+
+  const result =
+    await queryHbceDatabaseWithoutSchemaInitialization<IprSessionRow>(
+      `
+SELECT
+  session_id,
+  human_ipr,
+  runtime_ipr,
+  token_hash,
+  status,
+  created_at,
+  expires_at,
+  revoked_at,
+  last_seen_at,
+  device_label,
+  user_agent_hash,
+  ip_address_hash,
+  session_payload,
+  legal_certification
+FROM ipr_sessions
+WHERE token_hash = $1
+LIMIT 1
+      `.trim(),
+      [tokenHash]
+    );
+
+  if (!result.ok) {
+    throw new Error(
+      result.error ||
+        "IPR_SESSION_DATABASE_READ_ONLY_VERIFY_FAILED"
+    );
+  }
+
+  if (!result.rows[0]) {
+    return {
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_NOT_FOUND",
+      session: null
+    };
+  }
+
+  const session = sessionFromRow(result.rows[0]);
+
+  if (session.status === "REVOKED" || session.revokedAt) {
+    return {
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_REVOKED",
+      session
+    };
+  }
+
+  if (session.status === "EXPIRED" || isIprSessionExpired(session)) {
+    return {
+      ok: false,
+      authenticated: false,
+      reason: "SESSION_EXPIRED",
+      session: {
+        ...session,
+        status: "EXPIRED"
+      }
+    };
+  }
+
+  return {
+    ok: true,
+    authenticated: true,
+    reason: "SESSION_ACTIVE",
+    session
+  };
 }
 
 const globalForIprAuthStore = globalThis as typeof globalThis & {

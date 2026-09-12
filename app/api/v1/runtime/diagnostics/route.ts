@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  resolveIprAccountSessionFromRequestAsync
+  resolveIprAccountSessionFromRequestAsync,
+  resolveIprAuthSessionReadOnly
 } from "@/lib/ipr-auth-session-resolver";
 
 import {
@@ -482,8 +483,13 @@ function buildSummary(checks: DiagnosticCheck[], durationMs: number) {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const diagnosticMode =
+    request.nextUrl.searchParams.get("mode");
+
   const sessionResolution =
-    await resolveIprAccountSessionFromRequestAsync(request);
+    diagnosticMode === "physical-schema-proof"
+      ? await resolveIprAuthSessionReadOnly(request)
+      : await resolveIprAccountSessionFromRequestAsync(request);
 
   if (!sessionResolution.runtimeAuthorized) {
     return NextResponse.json(
@@ -500,9 +506,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       }
     );
   }
-
-  const diagnosticMode =
-    request.nextUrl.searchParams.get("mode");
 
   const diagnosticModeSupported =
     diagnosticMode === null ||

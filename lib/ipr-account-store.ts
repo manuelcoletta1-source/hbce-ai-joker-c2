@@ -9,7 +9,8 @@ import type {
 import {
   describeDefaultHbceDatabase,
   isHbceDatabaseConfigured,
-  queryHbceDatabase
+  queryHbceDatabase,
+  queryHbceDatabaseWithoutSchemaInitialization,
 } from "./ipr-database";
 
 export type IprAccountStoreKind =
@@ -1297,6 +1298,89 @@ class DatabaseReadyIprAccountStore implements IprAccountStoreAdapter {
   async touchLoginAsync(humanIpr: string): Promise<IprAccountProfile | null> {
     return this.processFallback.touchLoginAsync(humanIpr);
   }
+}
+
+export async function getDatabasePersistentIprAccountProfileReadOnly(input: {
+  strategy:
+    | "humanIpr"
+    | "accountId"
+    | "profileId"
+    | "certificateId"
+    | "cardSerial";
+  value: string;
+}): Promise<IprAccountProfile | null> {
+  assertDatabaseConfigured();
+
+  const column:
+    | "human_ipr"
+    | "account_id"
+    | "certificate_id"
+    | "card_serial" =
+    input.strategy === "humanIpr"
+      ? "human_ipr"
+      : input.strategy === "accountId" || input.strategy === "profileId"
+        ? "account_id"
+        : input.strategy === "certificateId"
+          ? "certificate_id"
+          : "card_serial";
+
+  const normalizedValue =
+    input.strategy === "humanIpr"
+      ? normalizeHumanIpr(input.value)
+      : normalizeLookupValue(input.value);
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const result =
+    await queryHbceDatabaseWithoutSchemaInitialization<IprAccountProfileRow>(
+      `
+SELECT
+  human_ipr,
+  tenant_id,
+  workspace_id,
+  account_id,
+  entity,
+  subject_kind,
+  certificate_id,
+  certificate_kind,
+  certificate_status,
+  certificate_scope,
+  card_serial,
+  certificate_hash,
+  access_decision,
+  access_scope,
+  identity_binding,
+  matrix_state,
+  semantic_memory_scope,
+  source,
+  handoff_hash,
+  profile_hash,
+  created_at,
+  updated_at,
+  last_login_at,
+  profile_payload,
+  legal_certification
+FROM ipr_account_profiles
+WHERE ${column} = $1
+LIMIT 1
+      `.trim(),
+      [normalizedValue]
+    );
+
+  if (!result.ok) {
+    throw new Error(
+      result.error ||
+        "IPR_ACCOUNT_PROFILE_DATABASE_READ_ONLY_LOOKUP_FAILED"
+    );
+  }
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return profileFromRow(result.rows[0]);
 }
 
 class DatabasePersistentIprAccountStore implements IprAccountStoreAdapter {
