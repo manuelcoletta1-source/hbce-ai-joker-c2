@@ -489,7 +489,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const sessionResolution =
     diagnosticMode === "physical-schema-proof"
       ? await resolveIprAuthSessionReadOnly(request)
-      : await resolveIprAccountSessionFromRequestAsync(request);
+      : await (diagnosticMode === "tenant-workspace-discovery-proof" ? resolveIprAuthSessionReadOnly(request) : resolveIprAccountSessionFromRequestAsync(request));
 
   if (!sessionResolution.runtimeAuthorized) {
     return NextResponse.json(

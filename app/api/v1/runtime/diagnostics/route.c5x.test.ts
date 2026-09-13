@@ -836,14 +836,14 @@ describe(
 
     beforeEach(() => {
       vi.clearAllMocks();
-      mocks.resolveSession.mockReset();
+      mocks.resolveReadOnly.mockReset();
       mocks.queryStrictDatabase.mockReset();
     });
 
     it(
       "fails unauthenticated discovery closed before strict database execution",
       async () => {
-        mocks.resolveSession.mockResolvedValue(
+        mocks.resolveReadOnly.mockResolvedValue(
           unauthenticatedResolution()
         );
 
@@ -873,7 +873,7 @@ describe(
           }
         ];
 
-        mocks.resolveSession.mockResolvedValue(
+        mocks.resolveReadOnly.mockResolvedValue(
           authenticatedResolution()
         );
 
@@ -922,7 +922,7 @@ describe(
     it(
       "fails discovery closed when the strict database query fails",
       async () => {
-        mocks.resolveSession.mockResolvedValue(
+        mocks.resolveReadOnly.mockResolvedValue(
           authenticatedResolution()
         );
 
@@ -953,7 +953,7 @@ describe(
     it(
       "fails discovery closed when the executed SQL hash mismatches the authorized hash",
       async () => {
-        mocks.resolveSession.mockResolvedValue(
+        mocks.resolveReadOnly.mockResolvedValue(
           authenticatedResolution()
         );
 
