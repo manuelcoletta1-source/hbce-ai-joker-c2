@@ -31,6 +31,9 @@ const mocks = vi.hoisted(() => ({
     vi.fn(),
 
   inspectPhysicalSchema:
+    vi.fn(),
+
+  queryStrictDatabase:
     vi.fn()
 
 }));
@@ -54,6 +57,23 @@ vi.mock(
     inspectIprDatabasePhysicalSchema:
       mocks.inspectPhysicalSchema
   })
+);
+
+
+vi.mock(
+  "@/lib/ipr-database",
+  async () => {
+    const actual =
+      await vi.importActual<typeof import("@/lib/ipr-database")>(
+        "@/lib/ipr-database"
+      );
+
+    return {
+      ...actual,
+      queryHbceDatabaseWithoutSchemaInitialization:
+        mocks.queryStrictDatabase
+    };
+  }
 );
 
 
@@ -793,6 +813,174 @@ describe(
         expect(response.status).toBe(400);
         expect(body.reason).toBe("UNSUPPORTED_DIAGNOSTIC_MODE");
         expect(mocks.inspectPhysicalSchema).not.toHaveBeenCalled();
+      }
+    );
+  }
+);
+
+describe(
+  "tenant-workspace-discovery-proof strict database integration",
+  () => {
+    const expectedSqlHash =
+      "29ae0ce34f3da292d06616773b5eef0f4e04eda1191209a39e3f9e797a10b1b8";
+
+    const mismatchSqlHash =
+      "0000000000000000000000000000000000000000000000000000000000000000";
+
+    function discoveryRequest() {
+      return new NextRequest(
+        "https://hbce.example/api/v1/runtime/diagnostics?mode=tenant-workspace-discovery-proof",
+        { method: "GET" }
+      );
+    }
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mocks.resolveSession.mockReset();
+      mocks.queryStrictDatabase.mockReset();
+    });
+
+    it(
+      "fails unauthenticated discovery closed before strict database execution",
+      async () => {
+        mocks.resolveSession.mockResolvedValue(
+          unauthenticatedResolution()
+        );
+
+        const response =
+          await GET(discoveryRequest());
+
+        const body =
+          await response.json();
+
+        expect(response.status).toBe(401);
+        expect(body.legalCertification).toBe(false);
+        expect(
+          mocks.queryStrictDatabase
+        ).not.toHaveBeenCalled();
+      }
+    );
+
+    it(
+      "returns rows only when strict discovery executes the exact authorized SQL",
+      async () => {
+        const rows = [
+          {
+            tenant_id:
+              "HBCE-TENANT-EXTERNAL-TEST",
+            workspace_id:
+              "HBCE-WORKSPACE-EXTERNAL-TEST"
+          }
+        ];
+
+        mocks.resolveSession.mockResolvedValue(
+          authenticatedResolution()
+        );
+
+        mocks.queryStrictDatabase.mockResolvedValue({
+          ok: true,
+          status: "PASS",
+          rows,
+          sqlHash: expectedSqlHash
+        });
+
+        const response =
+          await GET(discoveryRequest());
+
+        const body =
+          await response.json();
+
+        expect(response.status).toBe(200);
+        expect(body.status).toBe("PASS");
+        expect(body.mode).toBe(
+          "TENANT_WORKSPACE_DISCOVERY_PROOF"
+        );
+        expect(body.sqlHash).toBe(
+          expectedSqlHash
+        );
+        expect(body.rows).toEqual(rows);
+        expect(body.legalCertification).toBe(false);
+
+        expect(
+          mocks.queryStrictDatabase
+        ).toHaveBeenCalledTimes(1);
+
+        const executedSql =
+          mocks.queryStrictDatabase.mock.calls[0]?.[0];
+
+        const { createHash } =
+          await import("node:crypto");
+
+        expect(
+          createHash("sha256")
+            .update(String(executedSql))
+            .digest("hex")
+        ).toBe(expectedSqlHash);
+      }
+    );
+
+    it(
+      "fails discovery closed when the strict database query fails",
+      async () => {
+        mocks.resolveSession.mockResolvedValue(
+          authenticatedResolution()
+        );
+
+        mocks.queryStrictDatabase.mockResolvedValue({
+          ok: false,
+          status: "QUERY_FAILED",
+          rows: [],
+          sqlHash: expectedSqlHash
+        });
+
+        const response =
+          await GET(discoveryRequest());
+
+        const body =
+          await response.json();
+
+        expect(response.status).toBe(503);
+        expect(body.reason).toBe(
+          "TENANT_WORKSPACE_DISCOVERY_QUERY_FAILED"
+        );
+        expect(body.legalCertification).toBe(false);
+        expect(
+          mocks.queryStrictDatabase
+        ).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it(
+      "fails discovery closed when the executed SQL hash mismatches the authorized hash",
+      async () => {
+        mocks.resolveSession.mockResolvedValue(
+          authenticatedResolution()
+        );
+
+        mocks.queryStrictDatabase.mockResolvedValue({
+          ok: true,
+          status: "PASS",
+          rows: [],
+          sqlHash: mismatchSqlHash
+        });
+
+        const response =
+          await GET(discoveryRequest());
+
+        const body =
+          await response.json();
+
+        expect(response.status).toBe(500);
+        expect(body.reason).toBe(
+          "R29_EXECUTED_SQL_HASH_MISMATCH"
+        );
+        expect(body.sqlHash).toBe(
+          mismatchSqlHash
+        );
+        expect(body.legalCertification).toBe(false);
+        expect(
+          mocks.queryStrictDatabase
+        ).toHaveBeenCalledTimes(1);
       }
     );
   }

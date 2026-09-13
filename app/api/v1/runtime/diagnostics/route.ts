@@ -512,7 +512,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     diagnosticMode === "physical-schema-proof" ||
     diagnosticMode === "auth-rate-limit-physical-schema-proof" ||
     diagnosticMode === "auth-rate-limit-runtime-proof" ||
-    diagnosticMode === "auth-login-governance-proof";
+    diagnosticMode === "auth-login-governance-proof" ||
+    diagnosticMode === "tenant-workspace-discovery-proof";
 
   if (!diagnosticModeSupported) {
     return NextResponse.json(
@@ -523,7 +524,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           "physical-schema-proof",
           "auth-rate-limit-physical-schema-proof",
           "auth-rate-limit-runtime-proof",
-          "auth-login-governance-proof"
+          "auth-login-governance-proof",
+          "tenant-workspace-discovery-proof"
         ],
         legalCertification: false
       },
@@ -991,6 +993,116 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         }
       );
     }
+  }
+
+  if (diagnosticMode === "tenant-workspace-discovery-proof") {
+    const discoverySql = `
+SELECT
+  t.tenant_id,
+  t.status AS tenant_status,
+  t.environment AS tenant_environment,
+  w.workspace_id,
+  w.status AS workspace_status,
+  w.integration_mode,
+  w.account_id,
+  w.subscription_id,
+  t.legal_certification AS tenant_legal_certification,
+  w.legal_certification AS workspace_legal_certification
+FROM hbce_tenants t
+JOIN hbce_workspaces w
+  ON w.tenant_id = t.tenant_id
+WHERE t.tenant_id <> 'HBCE-TENANT-SELF-PILOT'
+  AND w.workspace_id <> 'HBCE-WORKSPACE-RND'
+  AND t.status = 'ACTIVE'
+  AND w.status = 'ACTIVE'
+  AND t.environment IN ('B2G_PILOT', 'PRODUCTION')
+  AND w.integration_mode IN (
+    'CONTROLLED_API_PILOT',
+    'FULL_CONTROLLED_INTEGRATION_PILOT',
+    'PRODUCTION'
+  )
+ORDER BY t.tenant_id ASC, w.workspace_id ASC
+LIMIT 25
+    `.trim();
+    const expectedSqlHash =
+      "29ae0ce34f3da292d06616773b5eef0f4e04eda1191209a39e3f9e797a10b1b8";
+
+    const { createHash } = await import("node:crypto");
+    const localSqlHash = createHash("sha256")
+      .update(discoverySql)
+      .digest("hex");
+
+    if (localSqlHash !== expectedSqlHash) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode: "TENANT_WORKSPACE_DISCOVERY_PROOF",
+          reason: "R29_SQL_HASH_MISMATCH",
+          sqlHash: localSqlHash,
+          legalCertification: false
+        },
+        {
+          status: 500,
+          headers: { "Cache-Control": "no-store, max-age=0" }
+        }
+      );
+    }
+
+    const result =
+      await queryHbceDatabaseWithoutSchemaInitialization<Record<string, unknown>>(
+        discoverySql
+      );
+
+    if (!result.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode: "TENANT_WORKSPACE_DISCOVERY_PROOF",
+          reason: "TENANT_WORKSPACE_DISCOVERY_QUERY_FAILED",
+          queryStatus: result.status,
+          sqlHash: result.sqlHash,
+          legalCertification: false
+        },
+        {
+          status: 503,
+          headers: { "Cache-Control": "no-store, max-age=0" }
+        }
+      );
+    }
+
+    if (result.sqlHash !== expectedSqlHash) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "FAIL",
+          mode: "TENANT_WORKSPACE_DISCOVERY_PROOF",
+          reason: "R29_EXECUTED_SQL_HASH_MISMATCH",
+          sqlHash: result.sqlHash,
+          legalCertification: false
+        },
+        {
+          status: 500,
+          headers: { "Cache-Control": "no-store, max-age=0" }
+        }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        status: "PASS",
+        mode: "TENANT_WORKSPACE_DISCOVERY_PROOF",
+        rows: result.rows,
+        sqlHash: result.sqlHash,
+        legalCertification: false
+      },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store, max-age=0" }
+      }
+    );
   }
 
   if (diagnosticMode === "auth-login-governance-proof") {
