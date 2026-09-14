@@ -824,8 +824,11 @@ describe(
     const expectedSqlHash =
       "29ae0ce34f3da292d06616773b5eef0f4e04eda1191209a39e3f9e797a10b1b8";
 
-    const mismatchSqlHash =
-      "0000000000000000000000000000000000000000000000000000000000000000";
+          const expectedDatabaseAdapterSqlHash =
+            "sqlhash:19fa522f";
+
+          const mismatchDatabaseAdapterSqlHash =
+            "sqlhash:00000000";
 
     function discoveryRequest() {
       return new NextRequest(
@@ -881,7 +884,7 @@ describe(
           ok: true,
           status: "PASS",
           rows,
-          sqlHash: expectedSqlHash
+          sqlHash: expectedDatabaseAdapterSqlHash
         });
 
         const response =
@@ -896,8 +899,8 @@ describe(
           "TENANT_WORKSPACE_DISCOVERY_PROOF"
         );
         expect(body.sqlHash).toBe(
-          expectedSqlHash
-        );
+            expectedDatabaseAdapterSqlHash
+          );
         expect(body.rows).toEqual(rows);
         expect(body.legalCertification).toBe(false);
 
@@ -930,7 +933,7 @@ describe(
           ok: false,
           status: "QUERY_FAILED",
           rows: [],
-          sqlHash: expectedSqlHash
+          sqlHash: expectedDatabaseAdapterSqlHash
         });
 
         const response =
@@ -961,7 +964,7 @@ describe(
           ok: true,
           status: "PASS",
           rows: [],
-          sqlHash: mismatchSqlHash
+          sqlHash: mismatchDatabaseAdapterSqlHash
         });
 
         const response =
@@ -975,8 +978,8 @@ describe(
           "R29_EXECUTED_SQL_HASH_MISMATCH"
         );
         expect(body.sqlHash).toBe(
-          mismatchSqlHash
-        );
+            mismatchDatabaseAdapterSqlHash
+          );
         expect(body.legalCertification).toBe(false);
         expect(
           mocks.queryStrictDatabase

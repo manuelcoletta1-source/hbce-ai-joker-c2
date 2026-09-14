@@ -1026,6 +1026,8 @@ LIMIT 25
     `.trim();
     const expectedSqlHash =
       "29ae0ce34f3da292d06616773b5eef0f4e04eda1191209a39e3f9e797a10b1b8";
+    const expectedDatabaseAdapterSqlHash =
+      "sqlhash:19fa522f";
 
     const { createHash } = await import("node:crypto");
     const localSqlHash = createHash("sha256")
@@ -1072,7 +1074,7 @@ LIMIT 25
       );
     }
 
-    if (result.sqlHash !== expectedSqlHash) {
+    if (result.sqlHash !== expectedDatabaseAdapterSqlHash) {
       return NextResponse.json(
         {
           ok: false,
