@@ -10258,6 +10258,39 @@ export default function InterfacePage() {
         }
 
 
+
+        /* HBCE-UI-FMT-004 | Solo presentazione */
+        .joker-message-text,
+        .joker-info-row dd,
+        .joker-json {
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
+        .joker-page button:focus-visible,
+        .joker-page a:focus-visible,
+        .joker-page textarea:focus-visible,
+        .joker-page input:focus-visible {
+          outline: 2px solid #67e8f9;
+          outline-offset: 3px;
+        }
+
+        @media (max-width: 640px) {
+          .joker-topbar {
+            position: relative;
+          }
+
+          .joker-top-actions button {
+            min-height: 44px;
+            flex: 1 1 135px;
+          }
+
+          .joker-health {
+            padding-bottom: 5px;
+            scrollbar-width: thin;
+          }
+        }
+
         @media (max-width: 1180px) {
           .joker-topbar,
           .joker-hero,

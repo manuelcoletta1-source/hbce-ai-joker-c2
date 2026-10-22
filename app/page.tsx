@@ -6,6 +6,23 @@ export default function HomePage() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
+        <header className="joker-header">
+          <Link href="/" className="joker-brand">
+            <span className="joker-sigil" aria-hidden="true">🜏</span>
+            <span>
+              HERMETICUM B.C.E.
+              <small>AI JOKER-C2 · Portale operativo</small>
+            </span>
+          </Link>
+
+          <nav className="joker-nav" aria-label="Navigazione">
+            <Link href="/interface">Interfaccia operativa</Link>
+            <a href="https://hbce-ipr-onboarding-app.vercel.app/">
+              Portale IPR
+            </a>
+          </nav>
+        </header>
+
         <section style={styles.hero}>
           <div style={styles.kicker}>
             HBCE Research · HERMETICUM B.C.E. S.r.l.
@@ -25,9 +42,9 @@ export default function HomePage() {
               Apri Interfaccia Operativa
             </Link>
 
-            <Link href="/ipr" style={styles.secondaryButton}>
-              Verifica IPR
-            </Link>
+            <a href="https://hbce-ipr-onboarding-app.vercel.app/" style={styles.secondaryButton}>
+              Apri il portale IPR
+            </a>
           </div>
         </section>
 
@@ -72,7 +89,7 @@ export default function HomePage() {
           </div>
 
           <div style={styles.systemFlow}>
-            request → identity → runtime → evidence → verification
+            richiesta → identità → runtime → evidenza → verifica
           </div>
 
           <div style={styles.systemNote}>
@@ -119,7 +136,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 14
   },
   title: {
-    fontSize: 42,
+    fontSize: "clamp(40px, 7vw, 72px)",
     margin: 0,
     lineHeight: 1.1
   },
