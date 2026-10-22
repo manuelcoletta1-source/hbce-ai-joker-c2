@@ -188,7 +188,7 @@ main {
   background: rgba(10,20,32,.92);
 }
 
-.joker-brand {
+.joker-header .joker-brand {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -198,7 +198,7 @@ main {
   letter-spacing: .03em;
 }
 
-.joker-brand small {
+.joker-header .joker-brand small {
   display: block;
   margin-top: 5px;
   color: #9fb5ca;
