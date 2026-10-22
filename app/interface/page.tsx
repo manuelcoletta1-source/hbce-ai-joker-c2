@@ -8652,10 +8652,10 @@ export default function InterfacePage() {
           display: grid;
           grid-template-rows: auto auto auto 1fr auto;
           background:
-            radial-gradient(circle at 18% -8%, rgba(14, 165, 233, 0.18), transparent 34%),
-            radial-gradient(circle at 84% 0%, rgba(99, 102, 241, 0.16), transparent 32%),
-            linear-gradient(180deg, #020617 0%, #07111f 42%, #0f172a 100%);
-          color: #e5edf8;
+            radial-gradient(circle at 18% -8%, rgba(201, 172, 114, 0.18), transparent 34%),
+            radial-gradient(circle at 84% 0%, rgba(201, 172, 114, 0.16), transparent 32%),
+            linear-gradient(180deg, #0c0e10 0%, #121619 42%, #15191d 100%);
+          color: #f0f0e9;
           font-family:
             Inter,
             ui-sans-serif,
@@ -8676,8 +8676,8 @@ export default function InterfacePage() {
           gap: 14px;
           align-items: center;
           padding: 14px 22px;
-          border-bottom: 1px solid rgba(71, 85, 105, 0.55);
-          background: rgba(2, 6, 23, 0.86);
+          border-bottom: 1px solid rgba(50, 59, 65, 0.55);
+          background: rgba(12, 14, 16, 0.86);
           backdrop-filter: blur(22px);
         }
 
@@ -8699,11 +8699,11 @@ export default function InterfacePage() {
           height: 40px;
           flex: 0 0 auto;
           border-radius: 16px;
-          background: linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(79, 70, 229, 1));
+          background: #15191d;
           color: white;
           font-weight: 950;
           box-shadow:
-            0 12px 30px rgba(34, 211, 238, 0.2),
+            0 12px 30px rgba(201, 172, 114, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
 
@@ -8734,7 +8734,7 @@ export default function InterfacePage() {
         .joker-brand span {
           display: block;
           margin-top: 2px;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 12px;
         }
 
@@ -8763,8 +8763,8 @@ export default function InterfacePage() {
 
         button {
           appearance: none;
-          border: 1px solid rgba(71, 85, 105, 0.78);
-          background: rgba(15, 23, 42, 0.78);
+          border: 1px solid rgba(50, 59, 65, 0.78);
+          background: rgba(21, 25, 29, 0.78);
           color: #dbeafe;
           border-radius: 999px;
           cursor: pointer;
@@ -8781,10 +8781,10 @@ export default function InterfacePage() {
 
 
         button:hover {
-          border-color: rgba(34, 211, 238, 0.72);
+          border-color: rgba(201, 172, 114, 0.72);
           color: #eff6ff;
-          background: rgba(8, 47, 73, 0.72);
-          box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
+          background: rgba(42, 38, 30, 0.72);
+          box-shadow: 0 0 0 3px rgba(201, 172, 114, 0.08);
         }
 
 
@@ -8807,9 +8807,9 @@ export default function InterfacePage() {
           gap: 6px;
           max-width: 260px;
           padding: 6px 10px;
-          border: 1px solid rgba(71, 85, 105, 0.68);
+          border: 1px solid rgba(50, 59, 65, 0.68);
           border-radius: 999px;
-          background: rgba(15, 23, 42, 0.74);
+          background: rgba(21, 25, 29, 0.74);
           color: #cbd5e1;
           font-size: 11px;
           font-weight: 760;
@@ -8819,7 +8819,7 @@ export default function InterfacePage() {
 
 
         .joker-pill b {
-          color: #64748b;
+          color: #adb8b8;
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: 0.06em;
@@ -8904,11 +8904,11 @@ export default function InterfacePage() {
 
         .joker-hero-copy,
         .joker-panel {
-          border: 1px solid rgba(71, 85, 105, 0.54);
+          border: 1px solid rgba(50, 59, 65, 0.54);
           border-radius: 28px;
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55)),
-            rgba(2, 6, 23, 0.58);
+            linear-gradient(180deg, rgba(21, 25, 29, 0.72), rgba(12, 14, 16, 0.55)),
+            rgba(12, 14, 16, 0.58);
           box-shadow:
             0 24px 70px rgba(0, 0, 0, 0.28),
             inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -8927,10 +8927,10 @@ export default function InterfacePage() {
 
 
         .joker-panel.is-active {
-          border-color: rgba(34, 211, 238, 0.34);
+          border-color: rgba(201, 172, 114, 0.34);
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.13), transparent 30%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.55));
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.13), transparent 30%),
+            linear-gradient(180deg, rgba(21, 25, 29, 0.72), rgba(12, 14, 16, 0.55));
         }
 
 
@@ -8941,7 +8941,7 @@ export default function InterfacePage() {
 
         .joker-kicker {
           display: inline-flex;
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.13em;
@@ -8963,7 +8963,7 @@ export default function InterfacePage() {
         .joker-panel p,
         .joker-empty p {
           margin: 14px 0 0;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 14px;
           line-height: 1.7;
           overflow-wrap: anywhere;
@@ -8973,9 +8973,9 @@ export default function InterfacePage() {
         .joker-hero code {
           display: inline-flex;
           margin-top: 18px;
-          color: #bae6fd;
-          background: rgba(8, 47, 73, 0.48);
-          border: 1px solid rgba(34, 211, 238, 0.2);
+          color: #ddc49a;
+          background: rgba(42, 38, 30, 0.48);
+          border: 1px solid rgba(201, 172, 114, 0.2);
           border-radius: 10px;
           padding: 6px 8px;
         }
@@ -8985,11 +8985,11 @@ export default function InterfacePage() {
         .joker-live-clock {
           margin-top: 18px;
           padding: 14px;
-          border: 1px solid rgba(34, 211, 238, 0.24);
+          border: 1px solid rgba(201, 172, 114, 0.24);
           border-radius: 20px;
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.14), transparent 38%),
-            linear-gradient(180deg, rgba(8, 47, 73, 0.32), rgba(15, 23, 42, 0.54));
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.14), transparent 38%),
+            linear-gradient(180deg, rgba(42, 38, 30, 0.32), rgba(21, 25, 29, 0.54));
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
@@ -9006,7 +9006,7 @@ export default function InterfacePage() {
           margin-top: 14px;
           padding: 12px;
           border-radius: 16px;
-          background: rgba(2, 6, 23, 0.42);
+          background: rgba(12, 14, 16, 0.42);
           border: 1px solid rgba(148, 163, 184, 0.16);
         }
 
@@ -9015,7 +9015,7 @@ export default function InterfacePage() {
         .joker-temporal-clock-grid span,
         .joker-live-clock span {
           display: block;
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.1em;
@@ -9064,7 +9064,7 @@ export default function InterfacePage() {
           padding: 11px;
           border-radius: 14px;
           border: 1px solid rgba(148, 163, 184, 0.14);
-          background: rgba(2, 6, 23, 0.34);
+          background: rgba(12, 14, 16, 0.34);
         }
 
 
@@ -9078,7 +9078,7 @@ export default function InterfacePage() {
         .joker-temporal-clock em {
           display: block;
           margin-top: 12px;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 11px;
           font-style: normal;
           line-height: 1.45;
@@ -9086,7 +9086,7 @@ export default function InterfacePage() {
 
 
         .joker-temporal-panel {
-          border-color: rgba(34, 211, 238, 0.38);
+          border-color: rgba(201, 172, 114, 0.38);
         }
 
 
@@ -9129,9 +9129,9 @@ export default function InterfacePage() {
         .joker-metric {
           min-width: 0;
           padding: 13px;
-          border: 1px solid rgba(71, 85, 105, 0.58);
+          border: 1px solid rgba(50, 59, 65, 0.58);
           border-radius: 18px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.52));
+          background: linear-gradient(180deg, rgba(21, 25, 29, 0.78), rgba(21, 25, 29, 0.52));
           overflow: hidden;
         }
 
@@ -9143,7 +9143,7 @@ export default function InterfacePage() {
 
         .joker-metric span {
           display: block;
-          color: #64748b;
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.09em;
@@ -9184,14 +9184,14 @@ export default function InterfacePage() {
           gap: 12px;
           align-items: start;
           padding: 10px 11px;
-          border: 1px solid rgba(71, 85, 105, 0.5);
+          border: 1px solid rgba(50, 59, 65, 0.5);
           border-radius: 15px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.48));
+          background: linear-gradient(180deg, rgba(21, 25, 29, 0.78), rgba(21, 25, 29, 0.48));
         }
 
 
         .joker-info-row dt {
-          color: #64748b;
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.08em;
@@ -9229,7 +9229,7 @@ export default function InterfacePage() {
 
         .joker-info-row dd small {
           margin-top: 3px;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 760;
           line-height: 1.35;
@@ -9260,11 +9260,11 @@ export default function InterfacePage() {
         .joker-cyber-chain {
           margin-top: 16px;
           padding: 14px;
-          border: 1px solid rgba(71, 85, 105, 0.56);
+          border: 1px solid rgba(50, 59, 65, 0.56);
           border-radius: 22px;
           background:
-            radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.1), transparent 34%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.46));
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.1), transparent 34%),
+            linear-gradient(180deg, rgba(21, 25, 29, 0.78), rgba(12, 14, 16, 0.46));
         }
 
 
@@ -9272,7 +9272,7 @@ export default function InterfacePage() {
           border-color: rgba(34, 197, 94, 0.38);
           background:
             radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.12), transparent 34%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.46));
+            linear-gradient(180deg, rgba(21, 25, 29, 0.78), rgba(12, 14, 16, 0.46));
         }
 
 
@@ -9291,8 +9291,8 @@ export default function InterfacePage() {
 
 
         .joker-memory-primary-button {
-          border-color: rgba(34, 211, 238, 0.48);
-          background: rgba(8, 47, 73, 0.7);
+          border-color: rgba(201, 172, 114, 0.48);
+          background: rgba(42, 38, 30, 0.7);
           color: #e0f2fe;
         }
 
@@ -9306,11 +9306,11 @@ export default function InterfacePage() {
 
         .joker-memory-column {
           min-width: 0;
-          border: 1px solid rgba(71, 85, 105, 0.5);
+          border: 1px solid rgba(50, 59, 65, 0.5);
           border-radius: 24px;
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0.66), rgba(2, 6, 23, 0.44)),
-            rgba(2, 6, 23, 0.52);
+            linear-gradient(180deg, rgba(21, 25, 29, 0.66), rgba(12, 14, 16, 0.44)),
+            rgba(12, 14, 16, 0.52);
           padding: 15px;
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
         }
@@ -9347,8 +9347,8 @@ export default function InterfacePage() {
           border-radius: 18px;
           padding: 12px;
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.08), transparent 38%),
-            rgba(15, 23, 42, 0.62);
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.08), transparent 38%),
+            rgba(21, 25, 29, 0.62);
         }
 
 
@@ -9363,7 +9363,7 @@ export default function InterfacePage() {
 
         .joker-memory-item-head span {
           flex: 0 0 auto;
-          color: #64748b;
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 850;
           line-height: 1.3;
@@ -9392,11 +9392,11 @@ export default function InterfacePage() {
 
         .joker-memory-meta span {
           max-width: 100%;
-          border: 1px solid rgba(71, 85, 105, 0.5);
+          border: 1px solid rgba(50, 59, 65, 0.5);
           border-radius: 999px;
           padding: 4px 7px;
-          background: rgba(2, 6, 23, 0.42);
-          color: #94a3b8;
+          background: rgba(12, 14, 16, 0.42);
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 820;
           overflow-wrap: anywhere;
@@ -9438,21 +9438,21 @@ export default function InterfacePage() {
 
         .joker-empty-mini {
           margin-top: 14px;
-          border: 1px dashed rgba(71, 85, 105, 0.74);
+          border: 1px dashed rgba(50, 59, 65, 0.74);
           border-radius: 18px;
           padding: 14px;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 12px;
           line-height: 1.55;
-          background: rgba(2, 6, 23, 0.32);
+          background: rgba(12, 14, 16, 0.32);
         }
 
 
         .joker-memory-prompt-block {
           margin-top: 12px;
-          border: 1px solid rgba(34, 211, 238, 0.2);
+          border: 1px solid rgba(201, 172, 114, 0.2);
           border-radius: 16px;
-          background: rgba(8, 47, 73, 0.22);
+          background: rgba(42, 38, 30, 0.22);
           overflow: hidden;
         }
 
@@ -9460,7 +9460,7 @@ export default function InterfacePage() {
         .joker-memory-prompt-block summary {
           cursor: pointer;
           padding: 10px 12px;
-          color: #bae6fd;
+          color: #ddc49a;
           font-size: 12px;
           font-weight: 850;
         }
@@ -9471,7 +9471,7 @@ export default function InterfacePage() {
           max-height: 260px;
           overflow: auto;
           padding: 12px;
-          border-top: 1px solid rgba(34, 211, 238, 0.16);
+          border-top: 1px solid rgba(201, 172, 114, 0.16);
           color: #cbd5e1;
           font-size: 11px;
           line-height: 1.55;
@@ -9525,15 +9525,15 @@ export default function InterfacePage() {
           border-radius: 18px;
           text-align: left;
           color: #cbd5e1;
-          background: rgba(2, 6, 23, 0.42);
+          background: rgba(12, 14, 16, 0.42);
         }
 
 
         .joker-default-prompt {
           margin-top: 12px;
           padding: 11px 16px;
-          border-color: rgba(34, 211, 238, 0.42);
-          background: rgba(8, 47, 73, 0.42);
+          border-color: rgba(201, 172, 114, 0.42);
+          background: rgba(42, 38, 30, 0.42);
         }
 
 
@@ -9555,7 +9555,7 @@ export default function InterfacePage() {
 
 
         .joker-message-user .joker-message-avatar {
-          background: linear-gradient(135deg, #334155, #0f172a);
+          background: linear-gradient(135deg, #334155, #15191d);
           box-shadow: none;
           font-size: 16px;
         }
@@ -9570,17 +9570,17 @@ export default function InterfacePage() {
 
         .joker-message-body {
           min-width: 0;
-          border: 1px solid rgba(71, 85, 105, 0.55);
+          border: 1px solid rgba(50, 59, 65, 0.55);
           border-radius: 24px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.52));
+          background: linear-gradient(180deg, rgba(21, 25, 29, 0.72), rgba(12, 14, 16, 0.52));
           padding: 17px;
           box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
         }
 
 
         .joker-message-user .joker-message-body {
-          background: linear-gradient(180deg, rgba(8, 145, 178, 0.16), rgba(2, 6, 23, 0.46));
-          border-color: rgba(34, 211, 238, 0.28);
+          background: linear-gradient(180deg, rgba(201, 172, 114, 0.16), rgba(12, 14, 16, 0.46));
+          border-color: rgba(201, 172, 114, 0.28);
         }
 
 
@@ -9610,7 +9610,7 @@ export default function InterfacePage() {
         .joker-message-head span,
         .joker-message-head time {
           display: block;
-          color: #64748b;
+          color: #adb8b8;
           font-size: 12px;
           line-height: 1.35;
           overflow-wrap: anywhere;
@@ -9622,7 +9622,7 @@ export default function InterfacePage() {
           white-space: pre-wrap;
           overflow-wrap: anywhere;
           word-break: break-word;
-          color: #e5edf8;
+          color: #f0f0e9;
           font-size: 15px;
           line-height: 1.72;
           font-family: inherit;
@@ -9632,20 +9632,20 @@ export default function InterfacePage() {
         .joker-dual-time-seal {
           margin: 0 0 13px;
           padding: 12px;
-          border: 1px solid rgba(34, 211, 238, 0.28);
+          border: 1px solid rgba(201, 172, 114, 0.28);
           border-radius: 18px;
           background:
-            linear-gradient(135deg, rgba(8, 145, 178, 0.14), rgba(79, 70, 229, 0.08)),
-            rgba(2, 6, 23, 0.44);
+            linear-gradient(135deg, rgba(201, 172, 114, 0.14), rgba(201, 172, 114, 0.04)),
+            rgba(12, 14, 16, 0.44);
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
 
         .joker-message-user .joker-dual-time-seal {
-          border-color: rgba(34, 211, 238, 0.36);
+          border-color: rgba(201, 172, 114, 0.36);
           background:
-            linear-gradient(135deg, rgba(14, 116, 144, 0.2), rgba(2, 6, 23, 0.28)),
-            rgba(8, 47, 73, 0.2);
+            linear-gradient(135deg, rgba(201, 172, 114, 0.2), rgba(12, 14, 16, 0.28)),
+            rgba(42, 38, 30, 0.2);
         }
 
 
@@ -9668,7 +9668,7 @@ export default function InterfacePage() {
 
 
         .joker-dual-time-seal-head span {
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 11px;
           font-weight: 850;
           letter-spacing: 0.06em;
@@ -9686,16 +9686,16 @@ export default function InterfacePage() {
         .joker-dual-time-rails div {
           min-width: 0;
           padding: 10px;
-          border: 1px solid rgba(71, 85, 105, 0.5);
+          border: 1px solid rgba(50, 59, 65, 0.5);
           border-radius: 14px;
-          background: rgba(15, 23, 42, 0.62);
+          background: rgba(21, 25, 29, 0.62);
         }
 
 
         .joker-dual-time-rails span,
         .joker-dual-time-meta span {
           display: block;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 10px;
           font-weight: 850;
           letter-spacing: 0.06em;
@@ -9725,9 +9725,9 @@ export default function InterfacePage() {
           display: inline-flex;
           max-width: 100%;
           padding: 5px 7px;
-          border: 1px solid rgba(71, 85, 105, 0.48);
+          border: 1px solid rgba(50, 59, 65, 0.48);
           border-radius: 999px;
-          background: rgba(2, 6, 23, 0.48);
+          background: rgba(12, 14, 16, 0.48);
           color: #cbd5e1;
           overflow-wrap: anywhere;
           text-transform: none;
@@ -9739,7 +9739,7 @@ export default function InterfacePage() {
           flex-wrap: wrap;
           margin-top: 15px;
           padding-top: 15px;
-          border-top: 1px solid rgba(71, 85, 105, 0.55);
+          border-top: 1px solid rgba(50, 59, 65, 0.55);
         }
 
 
@@ -9759,10 +9759,10 @@ export default function InterfacePage() {
 
 
         .joker-message-actions .joker-save-ipr-button {
-          border-color: rgba(34, 211, 238, 0.42);
+          border-color: rgba(201, 172, 114, 0.42);
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 42%),
-            rgba(8, 47, 73, 0.48);
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.16), transparent 42%),
+            rgba(42, 38, 30, 0.48);
           color: #e0f2fe;
         }
 
@@ -9774,7 +9774,7 @@ export default function InterfacePage() {
 
         summary {
           cursor: pointer;
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 12px;
           font-weight: 850;
         }
@@ -9785,7 +9785,7 @@ export default function InterfacePage() {
           max-height: 380px;
           overflow: auto;
           padding: 13px;
-          border: 1px solid rgba(71, 85, 105, 0.58);
+          border: 1px solid rgba(50, 59, 65, 0.58);
           border-radius: 16px;
           background: rgba(0, 0, 0, 0.28);
           color: #cbd5e1;
@@ -9809,7 +9809,7 @@ export default function InterfacePage() {
           width: 8px;
           height: 8px;
           border-radius: 999px;
-          background: #67e8f9;
+          background: #c9ac72;
           animation: jokerPulse 1s infinite ease-in-out;
         }
 
@@ -9845,10 +9845,10 @@ export default function InterfacePage() {
           bottom: 0;
           z-index: 25;
           padding: 14px 18px 18px;
-          border-top: 1px solid rgba(71, 85, 105, 0.55);
+          border-top: 1px solid rgba(50, 59, 65, 0.55);
           background:
-            linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.94) 18%),
-            rgba(2, 6, 23, 0.94);
+            linear-gradient(180deg, rgba(21, 25, 29, 0), rgba(12, 14, 16, 0.94) 18%),
+            rgba(12, 14, 16, 0.94);
           backdrop-filter: blur(22px);
         }
 
@@ -9875,9 +9875,9 @@ export default function InterfacePage() {
           gap: 8px;
           max-width: 100%;
           padding: 7px 10px;
-          border: 1px solid rgba(71, 85, 105, 0.78);
+          border: 1px solid rgba(50, 59, 65, 0.78);
           border-radius: 999px;
-          background: rgba(15, 23, 42, 0.82);
+          background: rgba(21, 25, 29, 0.82);
           color: #cbd5e1;
           font-size: 12px;
         }
@@ -9892,7 +9892,7 @@ export default function InterfacePage() {
 
 
         .joker-file-chip em {
-          color: #64748b;
+          color: #adb8b8;
           font-size: 10px;
           font-style: normal;
           font-weight: 850;
@@ -9915,7 +9915,7 @@ export default function InterfacePage() {
           padding: 0;
           width: 18px;
           height: 18px;
-          background: rgba(71, 85, 105, 0.72);
+          background: rgba(50, 59, 65, 0.72);
           color: #e2e8f0;
         }
 
@@ -9928,9 +9928,9 @@ export default function InterfacePage() {
           align-items: end;
           gap: 10px;
           padding: 10px;
-          border: 1px solid rgba(71, 85, 105, 0.72);
+          border: 1px solid rgba(50, 59, 65, 0.72);
           border-radius: 30px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
+          background: linear-gradient(180deg, rgba(21, 25, 29, 0.98), rgba(12, 14, 16, 0.96));
           box-shadow: 0 18px 58px rgba(0, 0, 0, 0.38);
         }
 
@@ -9949,9 +9949,9 @@ export default function InterfacePage() {
 
 
         .joker-send {
-          border-color: rgba(34, 211, 238, 0.65);
-          background: linear-gradient(135deg, #0891b2, #4f46e5);
-          color: #ffffff;
+          border-color: rgba(201, 172, 114, 0.65);
+          background: #c9ac72;
+          color: #13191d;
         }
 
 
@@ -9971,7 +9971,7 @@ export default function InterfacePage() {
 
 
         .joker-composer textarea::placeholder {
-          color: #64748b;
+          color: #adb8b8;
         }
 
 
@@ -9981,7 +9981,7 @@ export default function InterfacePage() {
           display: flex;
           justify-content: space-between;
           gap: 10px;
-          color: #64748b;
+          color: #adb8b8;
           font-size: 11px;
           line-height: 1.4;
         }
@@ -9993,11 +9993,11 @@ export default function InterfacePage() {
         .joker-source-intelligence-card {
           margin-top: 14px;
           padding: 14px;
-          border: 1px solid rgba(34, 211, 238, 0.24);
+          border: 1px solid rgba(201, 172, 114, 0.24);
           border-radius: 20px;
           background:
-            radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 32%),
-            linear-gradient(180deg, rgba(8, 47, 73, 0.24), rgba(15, 23, 42, 0.5));
+            radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.12), transparent 32%),
+            linear-gradient(180deg, rgba(42, 38, 30, 0.24), rgba(21, 25, 29, 0.5));
         }
 
 
@@ -10061,7 +10061,7 @@ export default function InterfacePage() {
           padding: 6px 8px;
           border: 1px solid rgba(103, 232, 249, 0.18);
           border-radius: 999px;
-          background: rgba(2, 6, 23, 0.42);
+          background: rgba(12, 14, 16, 0.42);
           color: #dbeafe;
           font-size: 11px;
           font-weight: 760;
@@ -10075,15 +10075,15 @@ export default function InterfacePage() {
           height: 20px;
           padding: 0 5px;
           border-radius: 999px;
-          background: rgba(34, 211, 238, 0.16);
-          color: #67e8f9;
+          background: rgba(201, 172, 114, 0.16);
+          color: #c9ac72;
           font-size: 10px;
           font-weight: 950;
         }
 
 
         .joker-semantic-term em {
-          color: #94a3b8;
+          color: #adb8b8;
           font-size: 10px;
           font-style: normal;
         }
@@ -10101,13 +10101,13 @@ export default function InterfacePage() {
           padding: 10px;
           border: 1px solid rgba(148, 163, 184, 0.14);
           border-radius: 14px;
-          background: rgba(2, 6, 23, 0.32);
+          background: rgba(12, 14, 16, 0.32);
         }
 
 
         .joker-semantic-axis span {
           display: block;
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.1em;
@@ -10133,7 +10133,7 @@ export default function InterfacePage() {
 
 
         .joker-file-ingestion-list > strong {
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.1em;
@@ -10149,55 +10149,55 @@ export default function InterfacePage() {
           padding: 8px;
           border: 1px solid rgba(148, 163, 184, 0.14);
           border-radius: 14px;
-          background: rgba(2, 6, 23, 0.32);
+          background: rgba(12, 14, 16, 0.32);
           color: #cbd5e1;
           font-size: 11px;
         }
 
 
         .joker-file-ingestion-row em {
-          color: #94a3b8;
+          color: #adb8b8;
           font-style: normal;
           line-height: 1.4;
         }
 
 
         .joker-source-intelligence-shell { padding: 0 22px 22px; }
-        .joker-source-intelligence-card { border-color: rgba(20, 184, 166, 0.32); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.86)), radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32); }
+        .joker-source-intelligence-card { border-color: rgba(20, 184, 166, 0.32); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(21, 25, 29, 0.94), rgba(12, 14, 16, 0.86)), radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(12, 14, 16, 0.32); }
         .joker-source-intelligence-guard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(45, 212, 191, 0.34); border-radius: 18px; background: rgba(15, 118, 110, 0.18); }
         .joker-source-intelligence-guard span, .joker-source-intelligence-guard em { color: #99f6e4; font-size: 11px; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
         .joker-source-intelligence-guard strong { min-width: 0; color: #f0fdfa; font-size: 14px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         .joker-source-intelligence-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
         .joker-source-intelligence-split { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 14px; margin-top: 14px; }
-        .joker-source-intelligence-block { min-width: 0; padding: 14px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 20px; background: rgba(2, 6, 23, 0.34); }
+        .joker-source-intelligence-block { min-width: 0; padding: 14px; border: 1px solid rgba(50, 59, 65, 0.58); border-radius: 20px; background: rgba(12, 14, 16, 0.34); }
         .joker-source-intelligence-block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .joker-source-intelligence-block-head strong { color: #ccfbf1; font-size: 12px; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; }
         .joker-source-endpoint-list { display: grid; gap: 8px; margin-top: 12px; }
-        .joker-source-endpoint-row { display: grid; grid-template-columns: minmax(120px, 0.78fr) auto minmax(170px, 1.1fr); gap: 8px; align-items: center; padding: 9px; border: 1px solid rgba(148, 163, 184, 0.14); border-radius: 14px; background: rgba(15, 23, 42, 0.52); }
+        .joker-source-endpoint-row { display: grid; grid-template-columns: minmax(120px, 0.78fr) auto minmax(170px, 1.1fr); gap: 8px; align-items: center; padding: 9px; border: 1px solid rgba(148, 163, 184, 0.14); border-radius: 14px; background: rgba(21, 25, 29, 0.52); }
         .joker-source-endpoint-row strong { display: block; color: #f8fafc; font-size: 12px; }
-        .joker-source-endpoint-row span { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .joker-source-endpoint-row span { display: block; margin-top: 3px; color: #adb8b8; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
         .joker-source-endpoint-row em { color: #9db1c8; font-size: 11px; font-style: normal; line-height: 1.4; }
         .joker-source-set-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-        .joker-source-set-item { display: grid; gap: 9px; min-height: 126px; padding: 12px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 18px; background: rgba(15, 23, 42, 0.72); }
+        .joker-source-set-item { display: grid; gap: 9px; min-height: 126px; padding: 12px; border: 1px solid rgba(50, 59, 65, 0.58); border-radius: 18px; background: rgba(21, 25, 29, 0.72); }
         .joker-source-set-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .joker-source-set-head strong { color: #f8fafc; font-size: 13px; line-height: 1.25; }
         .joker-source-set-item p { margin: 0; color: #9db1c8; font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
-        .joker-source-intelligence-boundary { margin-top: 14px; padding: 12px; border: 1px solid rgba(45, 212, 191, 0.22); border-radius: 18px; background: rgba(2, 6, 23, 0.28); }
+        .joker-source-intelligence-boundary { margin-top: 14px; padding: 12px; border: 1px solid rgba(45, 212, 191, 0.22); border-radius: 18px; background: rgba(12, 14, 16, 0.28); }
         .joker-source-intelligence-boundary > div:first-child span { display: block; color: #5eead4; font-size: 10px; font-weight: 950; letter-spacing: 0.1em; text-transform: uppercase; }
         .joker-source-intelligence-boundary > div:first-child strong { display: block; margin-top: 5px; color: #e2e8f0; font-size: 13px; line-height: 1.45; }
         .joker-branch-map-shell { padding: 0 22px 22px; }
-        .joker-branch-map-card { border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.86)), radial-gradient(circle at 10% 0%, rgba(34, 211, 238, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(2, 6, 23, 0.32); }
-        .joker-branch-active-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(34, 211, 238, 0.38); border-radius: 18px; background: rgba(8, 47, 73, 0.28); }
+        .joker-branch-map-card { border: 1px solid rgba(201, 172, 114, 0.28); border-radius: 28px; padding: 18px; background: linear-gradient(135deg, rgba(21, 25, 29, 0.94), rgba(12, 14, 16, 0.86)), radial-gradient(circle at 10% 0%, rgba(201, 172, 114, 0.14), transparent 36%); box-shadow: 0 24px 70px rgba(12, 14, 16, 0.32); }
+        .joker-branch-active-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(201, 172, 114, 0.38); border-radius: 18px; background: rgba(42, 38, 30, 0.28); }
         .joker-branch-active-strip span, .joker-branch-active-strip em { color: #8fb2cb; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
         .joker-branch-active-strip strong { min-width: 0; color: #e0f2fe; font-size: 15px; }
         .joker-branch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-        .joker-branch-item { display: grid; gap: 9px; min-height: 128px; padding: 14px; border: 1px solid rgba(71, 85, 105, 0.58); border-radius: 18px; background: rgba(15, 23, 42, 0.72); }
-        .joker-branch-item.is-active { border-color: rgba(34, 211, 238, 0.78); background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.16), transparent 48%), rgba(8, 47, 73, 0.48); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.16), 0 18px 40px rgba(8, 145, 178, 0.12); }
+        .joker-branch-item { display: grid; gap: 9px; min-height: 128px; padding: 14px; border: 1px solid rgba(50, 59, 65, 0.58); border-radius: 18px; background: rgba(21, 25, 29, 0.72); }
+        .joker-branch-item.is-active { border-color: rgba(201, 172, 114, 0.78); background: radial-gradient(circle at 0% 0%, rgba(201, 172, 114, 0.16), transparent 48%), rgba(42, 38, 30, 0.48); box-shadow: 0 0 0 1px rgba(201, 172, 114, 0.16), 0 18px 40px rgba(201, 172, 114, 0.12); }
         .joker-branch-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
         .joker-branch-item-head strong { color: #f8fafc; font-size: 13px; line-height: 1.25; }
         .joker-branch-item p { margin: 0; color: #9db1c8; font-size: 12px; line-height: 1.45; }
         .joker-branch-meta { display: flex; flex-wrap: wrap; gap: 6px; }
-        .joker-branch-meta span { border: 1px solid rgba(71, 85, 105, 0.55); border-radius: 999px; padding: 4px 8px; color: #a7bbd3; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        .joker-branch-meta span { border: 1px solid rgba(50, 59, 65, 0.55); border-radius: 999px; padding: 4px 8px; color: #a7bbd3; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 
 
         .joker-document-profile-list {
@@ -10208,7 +10208,7 @@ export default function InterfacePage() {
 
 
         .joker-document-profile-list > strong {
-          color: #67e8f9;
+          color: #c9ac72;
           font-size: 10px;
           font-weight: 950;
           letter-spacing: 0.1em;
@@ -10224,7 +10224,7 @@ export default function InterfacePage() {
           padding: 9px;
           border: 1px solid rgba(148, 163, 184, 0.14);
           border-radius: 15px;
-          background: rgba(2, 6, 23, 0.34);
+          background: rgba(12, 14, 16, 0.34);
           color: #cbd5e1;
           font-size: 11px;
         }
@@ -10252,7 +10252,7 @@ export default function InterfacePage() {
 
         .joker-document-profile-row em {
           margin-top: 3px;
-          color: #94a3b8;
+          color: #adb8b8;
           font-style: normal;
           line-height: 1.35;
         }
@@ -10271,7 +10271,7 @@ export default function InterfacePage() {
         .joker-page a:focus-visible,
         .joker-page textarea:focus-visible,
         .joker-page input:focus-visible {
-          outline: 2px solid #67e8f9;
+          outline: 2px solid #c9ac72;
           outline-offset: 3px;
         }
 
@@ -10430,6 +10430,8 @@ export default function InterfacePage() {
             flex-direction: column;
           }
         }
+
+        .joker-logo, .joker-empty-logo, .joker-message-assistant .joker-message-avatar { background: #15191d; color: #c9ac72; border: 1px solid #c9ac72; border-radius: 50%; box-shadow: none; }
       `}</style>
     </main>
   );

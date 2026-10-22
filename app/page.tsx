@@ -113,8 +113,8 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top left, rgba(0,194,255,0.12), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
-    color: "#e8eef7",
+      "radial-gradient(circle at top left, rgba(201,172,114,0.08), transparent 30%), linear-gradient(180deg, #0c0e10 0%, #15191d 100%)",
+    color: "#f0f0e9",
     fontFamily:
       'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     padding: 24
@@ -132,7 +132,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
     letterSpacing: "0.22em",
     textTransform: "uppercase",
-    color: "#7dd3fc",
+    color: "#c9ac72",
     marginBottom: 14
   },
   title: {
@@ -153,18 +153,18 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap"
   },
   primaryButton: {
-    background: "#22d3ee",
-    color: "#071018",
+    background: "#c9ac72",
+    color: "#0c0e10",
     padding: "14px 20px",
     borderRadius: 16,
     fontWeight: 700,
     textDecoration: "none"
   },
   secondaryButton: {
-    border: "1px solid rgba(255,255,255,0.12)",
+    border: "1px solid #635841",
     padding: "14px 20px",
     borderRadius: 16,
-    color: "#e8eef7",
+    color: "#f0f0e9",
     textDecoration: "none"
   },
   grid: {
@@ -173,25 +173,25 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 20
   },
   card: {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.04)",
+    border: "1px solid #323b41",
+    background: "#15191d",
     borderRadius: 20,
     padding: 18
   },
   cardTitle: {
     fontSize: 14,
     marginBottom: 10,
-    color: "#7dd3fc",
+    color: "#c9ac72",
     textTransform: "uppercase",
     letterSpacing: "0.12em"
   },
   cardText: {
     fontSize: 14,
     lineHeight: 1.6,
-    color: "#edf4ff"
+    color: "#cbd4d0"
   },
   system: {
-    border: "1px solid rgba(255,255,255,0.08)",
+    border: "1px solid #323b41",
     background: "rgba(0,0,0,0.25)",
     borderRadius: 20,
     padding: 20,
@@ -200,7 +200,7 @@ const styles: Record<string, React.CSSProperties> = {
   systemTitle: {
     fontSize: 16,
     marginBottom: 10,
-    color: "#7dd3fc"
+    color: "#c9ac72"
   },
   systemFlow: {
     fontSize: 14,
