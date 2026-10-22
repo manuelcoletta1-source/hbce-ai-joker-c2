@@ -1,11 +1,11 @@
 :root {
-  --bg: #0b0f14;
-  --panel: #111821;
-  --panel-2: #0f1720;
-  --text: #e8eef7;
-  --muted: #8fa3b8;
-  --accent: #7dd3fc;
-  --accent-2: #38bdf8;
+  --bg: #0c0e10;
+  --panel: #15191d;
+  --panel-2: #1c2227;
+  --text: #f0f0e9;
+  --muted: #adb8b8;
+  --accent: #c9ac72;
+  --accent-2: #ddc49a;
   --line: rgba(255, 255, 255, 0.08);
   --line-2: rgba(255, 255, 255, 0.05);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -26,8 +26,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(125, 211, 252, 0.08), transparent 30%),
+    radial-gradient(circle at top left, rgba(201, 172, 114, 0.10), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(201, 172, 114, 0.08), transparent 30%),
     var(--bg);
   color: var(--text);
   font-family:
@@ -67,7 +67,7 @@ main {
 }
 
 ::selection {
-  background: rgba(125, 211, 252, 0.22);
+  background: rgba(201, 172, 114, 0.22);
   color: var(--text);
 }
 
@@ -192,7 +192,7 @@ main {
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #e8eef7;
+  color: #f0f0e9;
   text-decoration: none;
   font-weight: 800;
   letter-spacing: .03em;
@@ -211,9 +211,9 @@ main {
   place-items: center;
   width: 52px;
   height: 52px;
-  border: 1px solid #456b80;
-  border-radius: 14px;
-  color: #7dd3fc;
+  border: 1px solid #c9ac72;
+  border-radius: 50%;
+  color: #c9ac72;
   font-size: 30px;
 }
 
@@ -227,15 +227,15 @@ main {
   padding: 11px 14px;
   border: 1px solid rgba(125,211,252,.20);
   border-radius: 12px;
-  color: #e8eef7;
+  color: #f0f0e9;
   text-decoration: none;
   font-size: 13px;
 }
 
 .joker-nav a:hover,
 .joker-nav a:focus-visible {
-  border-color: #7dd3fc;
-  color: #7dd3fc;
+  border-color: #c9ac72;
+  color: #c9ac72;
 }
 
 @media (max-width: 640px) {
