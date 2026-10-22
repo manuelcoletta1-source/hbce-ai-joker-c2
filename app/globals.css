@@ -1,11 +1,11 @@
 :root {
-  --bg: #0b0f14;
-  --panel: #111821;
-  --panel-2: #0f1720;
-  --text: #e8eef7;
-  --muted: #8fa3b8;
-  --accent: #7dd3fc;
-  --accent-2: #38bdf8;
+  --bg: #0c0e10;
+  --panel: #15191d;
+  --panel-2: #1c2227;
+  --text: #f0f0e9;
+  --muted: #adb8b8;
+  --accent: #c9ac72;
+  --accent-2: #e4c88f;
   --line: rgba(255, 255, 255, 0.08);
   --line-2: rgba(255, 255, 255, 0.05);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -26,8 +26,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(125, 211, 252, 0.08), transparent 30%),
+    radial-gradient(circle at top left, rgba(201, 172, 114, 0.10), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(201, 172, 114, 0.08), transparent 30%),
     var(--bg);
   color: var(--text);
   font-family:
@@ -67,7 +67,7 @@ main {
 }
 
 ::selection {
-  background: rgba(125, 211, 252, 0.22);
+  background: rgba(201, 172, 114, 0.22);
   color: var(--text);
 }
 
@@ -108,7 +108,7 @@ main {
   justify-content: center;
   text-decoration: none;
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  color: #06121a;
+  color: #13191d;
   padding: 14px 18px;
   border-radius: 14px;
   font-weight: 700;
@@ -171,5 +171,85 @@ main {
 
   .hbce-page {
     padding: 24px 14px 40px;
+  }
+}
+/* HERMETICUM B.C.E. | Corporate visual system */
+.hbce-site {
+  background: #0c0e10 !important;
+  color: #f0f0e9;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.hbce-company-header {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid #323b41;
+}
+.hbce-company-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  text-decoration: none;
+  color: #f0f0e9;
+  font-weight: 750;
+  letter-spacing: .06em;
+}
+.hbce-company-seal {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c9ac72;
+  border-radius: 50%;
+  color: #c9ac72;
+  font-size: 22px;
+}
+.hbce-company-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 23px;
+}
+.hbce-company-nav a {
+  color: #e3e7e1;
+  font-size: .83rem;
+  text-decoration: none;
+}
+.hbce-company-nav a:hover {
+  color: #c9ac72;
+}
+.hbce-site a:focus-visible {
+  outline: 3px solid #c9ac72;
+  outline-offset: 4px;
+}
+.hbce-hero {
+  padding: 90px 0 95px;
+}
+.hbce-hero h1 {
+  font-size: clamp(2.65rem, 6.5vw, 5.7rem) !important;
+  line-height: 1.13;
+  letter-spacing: -.035em;
+}
+.hbce-hero a {
+  border-radius: 6px !important;
+}
+.hbce-cards article,
+.hbce-system {
+  background: #15191d !important;
+  border: 1px solid #323b41 !important;
+  border-radius: 16px;
+}
+@media (max-width: 610px) {
+  .hbce-company-header {
+    align-items: flex-start;
+  }
+  .hbce-company-nav {
+    gap: 12px 18px;
+  }
+  .hbce-hero {
+    padding: 55px 0 65px;
   }
 }

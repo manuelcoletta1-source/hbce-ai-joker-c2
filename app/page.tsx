@@ -4,9 +4,24 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main style={styles.page}>
+    <main className="hbce-site" style={styles.page}>
       <div style={styles.container}>
-        <section style={styles.hero}>
+        <header className="hbce-company-header">
+          <Link href="/" className="hbce-company-brand">
+            <span className="hbce-company-seal">🜏</span>
+            <span>HERMETICUM B.C.E.</span>
+          </Link>
+          <nav className="hbce-company-nav" aria-label="Navigazione H.B.C.E.">
+            <Link href="/">Home</Link>
+            <Link href="/interface">JOKER-C2</Link>
+            <Link href="/runtime">Runtime</Link>
+            <a href="https://manuelcoletta1-source.github.io/hermeticum-bce-platform/#inizio">
+              Portale H.B.C.E.
+            </a>
+          </nav>
+        </header>
+        <section className="hbce-hero" style={styles.hero}>
+          <div style={styles.brandSeal} aria-hidden="true">🜏</div>
           <div style={styles.kicker}>
             HBCE Research · HERMETICUM B.C.E. S.r.l.
           </div>
@@ -25,13 +40,13 @@ export default function HomePage() {
               Apri Interfaccia Operativa
             </Link>
 
-            <Link href="/ipr" style={styles.secondaryButton}>
-              Verifica IPR
+            <Link href="https://manuelcoletta1-source.github.io/hermeticum-bce-platform/#accessi-hbce" style={styles.secondaryButton}>
+              Accessi IPR ↗
             </Link>
           </div>
         </section>
 
-        <section style={styles.grid}>
+        <section className="hbce-cards" style={styles.grid}>
           <article style={styles.card}>
             <div style={styles.cardTitle}>Identità Operativa</div>
             <div style={styles.cardText}>
@@ -66,7 +81,7 @@ export default function HomePage() {
           </article>
         </section>
 
-        <section style={styles.system}>
+        <section className="hbce-system" style={styles.system}>
           <div style={styles.systemTitle}>
             Modello operativo
           </div>
@@ -96,8 +111,8 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top left, rgba(0,194,255,0.12), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1220 100%)",
-    color: "#e8eef7",
+      "radial-gradient(circle at top left, rgba(201,172,114,0.12), transparent 30%), linear-gradient(180deg, #0c0e10 0%, #15191d 100%)",
+    color: "#f0f0e9",
     fontFamily:
       'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
     padding: 24
@@ -111,11 +126,22 @@ const styles: Record<string, React.CSSProperties> = {
   hero: {
     textAlign: "center"
   },
+  brandSeal: {
+    width: 72,
+    height: 72,
+    margin: "0 auto 20px",
+    display: "grid",
+    placeItems: "center",
+    border: "1px solid #c9ac72",
+    borderRadius: "50%",
+    color: "#c9ac72",
+    fontSize: 42
+  },
   kicker: {
     fontSize: 11,
     letterSpacing: "0.22em",
     textTransform: "uppercase",
-    color: "#7dd3fc",
+    color: "#c9ac72",
     marginBottom: 14
   },
   title: {
@@ -125,7 +151,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   subtitle: {
     marginTop: 14,
-    color: "rgba(232,238,247,0.72)",
+    color: "rgba(240,240,233,0.72)",
     fontSize: 16
   },
   ctaRow: {
@@ -136,8 +162,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap"
   },
   primaryButton: {
-    background: "#22d3ee",
-    color: "#071018",
+    background: "#c9ac72",
+    color: "#13191d",
     padding: "14px 20px",
     borderRadius: 16,
     fontWeight: 700,
@@ -147,7 +173,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,0.12)",
     padding: "14px 20px",
     borderRadius: 16,
-    color: "#e8eef7",
+    color: "#f0f0e9",
     textDecoration: "none"
   },
   grid: {
@@ -164,14 +190,14 @@ const styles: Record<string, React.CSSProperties> = {
   cardTitle: {
     fontSize: 14,
     marginBottom: 10,
-    color: "#7dd3fc",
+    color: "#c9ac72",
     textTransform: "uppercase",
     letterSpacing: "0.12em"
   },
   cardText: {
     fontSize: 14,
     lineHeight: 1.6,
-    color: "#edf4ff"
+    color: "#f0f0e9"
   },
   system: {
     border: "1px solid rgba(255,255,255,0.08)",
@@ -183,7 +209,7 @@ const styles: Record<string, React.CSSProperties> = {
   systemTitle: {
     fontSize: 16,
     marginBottom: 10,
-    color: "#7dd3fc"
+    color: "#c9ac72"
   },
   systemFlow: {
     fontSize: 14,
@@ -191,7 +217,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   systemNote: {
     fontSize: 13,
-    color: "rgba(232,238,247,0.65)"
+    color: "rgba(240,240,233,0.65)"
   },
   footer: {
     textAlign: "center",
