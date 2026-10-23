@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type LoginMode = "SET_PASSWORD" | "LOGIN";
-type RequestStatus = "IDLE" | "LOADING" | "SUCCESS" | "ERROR";
+type RequestStatus = "IDLE" | "LOADING" | "SUCCESS" | "UNAUTHENTICATED" | "ERROR";
 
 type ApiState = {
   status: RequestStatus;
@@ -21,10 +21,9 @@ const INITIAL_API_STATE: ApiState = {
   receivedAt: null
 };
 
-const HUMAN_IPR_CANONICAL = "IPR-88505FE91013DCFE97C56ED1";
 
 const PAGE_BOUNDARY =
-  "This page creates or verifies an HBCE IPR account session for AI JOKER-C2. SET_PASSWORD creates the password only after a verified HBCE IPR handoff. LOGIN verifies an existing password. The page does not issue official identity, does not replace CIE, SPID, EUDI Wallet, passport, codice fiscale or eIDAS qualified trust services, and does not create legal certification.";
+  "Questa pagina crea o verifica una sessione HBCE IPR per AI JOKER-C2. La modalità SET_PASSWORD permette di impostare la password solo dopo un trasferimento IPR verificato. La modalità LOGIN verifica una password esistente. Questa pagina non rilascia identità ufficiali, non sostituisce CIE, SPID, EUDI Wallet, passaporto, codice fiscale o servizi fiduciari qualificati eIDAS e non produce certificazioni legali.";
 
 const WEAK_PROJECT_FRAGMENTS = [
   "joker",
@@ -202,18 +201,22 @@ function findHumanIprFromUrl(): string | null {
 
 function getStatusLabel(state: ApiState): string {
   if (state.status === "IDLE") {
-    return "Not executed";
+    return "Non eseguito";
   }
 
   if (state.status === "LOADING") {
-    return "Loading";
+    return "Caricamento";
   }
 
   if (state.status === "SUCCESS") {
-    return "Success";
+    return "Operazione riuscita";
   }
 
-  return "Error";
+  if (state.status === "UNAUTHENTICATED") {
+    return "Accesso richiesto";
+  }
+
+  return "Errore";
 }
 
 function hasSymbol(password: string): boolean {
@@ -277,7 +280,7 @@ function buildLoginSummary(payload: unknown): string[] {
     `Authenticated: ${authenticated === null ? "unknown" : String(authenticated)}`,
     `Mode: ${mode || "unknown"}`,
     `Reason: ${reason || "unknown"}`,
-    `Human IPR: ${humanIpr || "unknown"}`,
+    `Identificativo Human IPR: ${humanIpr || "non disponibile"}`,
     `Access source: ${accessSource || "unknown"}`,
     `Matrix state: ${matrixState || "unknown"}`,
     `Memory scope: ${memoryScope || "unknown"}`,
@@ -300,7 +303,7 @@ function buildSessionSummary(payload: unknown): string[] {
   return [
     `Authenticated: ${authenticated === null ? "unknown" : String(authenticated)}`,
     `Reason: ${reason || "unknown"}`,
-    `Human IPR: ${humanIpr || "unknown"}`,
+    `Identificativo Human IPR: ${humanIpr || "non disponibile"}`,
     `Access source: ${accessSource || "unknown"}`,
     `Matrix state: ${matrixState || "unknown"}`,
     `Memory scope: ${memoryScope || "unknown"}`,
@@ -315,13 +318,13 @@ function isAuthenticated(payload: unknown): boolean {
 export default function HbceJokerLoginPage() {
   const [mode, setMode] = useState<LoginMode>("LOGIN");
 
-  const [createHumanIpr, setCreateHumanIpr] = useState(HUMAN_IPR_CANONICAL);
+  const [createHumanIpr, setCreateHumanIpr] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [handoffText, setHandoffText] = useState("");
   const [handoffLoaded, setHandoffLoaded] = useState(false);
 
-  const [loginHumanIpr, setLoginHumanIpr] = useState(HUMAN_IPR_CANONICAL);
+  const [loginHumanIpr, setLoginHumanIpr] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
   const [deviceLabel, setDeviceLabel] = useState("JOKER-C2 login device");
@@ -388,10 +391,14 @@ export default function HbceJokerLoginPage() {
       const payload = await response.json();
 
       setSessionState({
-        status: response.ok ? "SUCCESS" : "ERROR",
+        status: response.ok
+          ? "SUCCESS"
+          : response.status === 401
+            ? "UNAUTHENTICATED"
+            : "ERROR",
         httpStatus: response.status,
         payload,
-        error: response.ok
+        error: response.ok || response.status === 401
           ? null
           : `HTTP ${response.status} ${response.statusText}`,
         receivedAt: nowIso()
@@ -450,10 +457,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "HUMAN_IPR_MISSING",
-          detail: "Human IPR is required.",
+          detail: "Identificativo Human IPR obbligatorio.",
           legalCertification: false
         },
-        error: "Human IPR is required.",
+        error: "Identificativo Human IPR obbligatorio.",
         receivedAt: nowIso()
       });
       return;
@@ -467,10 +474,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "IPR_PASSWORD_MISSING",
-          detail: "Password and confirmation password are required.",
+          detail: "Password e conferma della password obbligatorie.",
           legalCertification: false
         },
-        error: "Password and confirmation password are required.",
+        error: "Password e conferma della password obbligatorie.",
         receivedAt: nowIso()
       });
       return;
@@ -484,10 +491,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "IPR_PASSWORD_CONFIRMATION_MISMATCH",
-          detail: "The IPR password and confirmation password do not match.",
+          detail: "La password IPR e la conferma non coincidono.",
           legalCertification: false
         },
-        error: "The IPR password and confirmation password do not match.",
+        error: "La password IPR e la conferma non coincidono.",
         receivedAt: nowIso()
       });
       return;
@@ -501,10 +508,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "IPR_HANDOFF_REQUIRED",
-          detail: "A valid HBCE IPR handoff JSON is required to create the password.",
+          detail: "Per configurare la password è necessario un JSON di passaggio IPR valido.",
           legalCertification: false
         },
-        error: "A valid HBCE IPR handoff JSON is required to create the password.",
+        error: "Per configurare la password è necessario un JSON di passaggio IPR valido.",
         receivedAt: nowIso()
       });
       return;
@@ -587,10 +594,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "HUMAN_IPR_MISSING",
-          detail: "Human IPR is required.",
+          detail: "Identificativo Human IPR obbligatorio.",
           legalCertification: false
         },
-        error: "Human IPR is required.",
+        error: "Identificativo Human IPR obbligatorio.",
         receivedAt: nowIso()
       });
       return;
@@ -604,10 +611,10 @@ export default function HbceJokerLoginPage() {
           ok: false,
           authenticated: false,
           reason: "IPR_PASSWORD_MISSING",
-          detail: "IPR password is required.",
+          detail: "Password IPR obbligatoria.",
           legalCertification: false
         },
-        error: "IPR password is required.",
+        error: "Password IPR obbligatoria.",
         receivedAt: nowIso()
       });
       return;
@@ -675,8 +682,8 @@ export default function HbceJokerLoginPage() {
         minHeight: "100vh",
         padding: "32px",
         background:
-          "radial-gradient(circle at top, rgba(56,189,248,0.13), transparent 34%), #05070a",
-        color: "#f8fafc",
+          "radial-gradient(circle at top, rgba(201,172,114,0.10), transparent 34%), #0c0e10",
+        color: "#f0f0e9",
         fontFamily:
           "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
       }}
@@ -686,7 +693,7 @@ export default function HbceJokerLoginPage() {
           <p
             style={{
               margin: 0,
-              color: "#9ca3af",
+              color: "#adb8b8",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               fontSize: "12px"
@@ -702,24 +709,24 @@ export default function HbceJokerLoginPage() {
               lineHeight: 1
             }}
           >
-            JOKER-C2 IPR Access
+            Accesso IPR · JOKER-C2
           </h1>
 
           <p
             style={{
               margin: 0,
               maxWidth: "860px",
-              color: "#cbd5e1",
+              color: "#adb8b8",
               fontSize: "17px",
               lineHeight: 1.6
             }}
           >
-            Create an IPR password after verified onboarding, or login with an
-            existing IPR password to enter AI JOKER-C2 through a persistent
-            HBCE account session.
+            Configura la password dopo la verifica IPR oppure accedi con una
+            password esistente. JOKER-C2 richiede una sessione HBCE IPR
+            valida per autorizzare l'accesso operativo.
           </p>
 
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px" }}>
+          <p style={{ margin: 0, color: "#adb8b8", fontSize: "14px" }}>
             HERMETICUM B.C.E. S.r.l.
           </p>
         </header>
@@ -734,36 +741,36 @@ export default function HbceJokerLoginPage() {
         >
           <article
             style={{
-              border: "1px solid rgba(148,163,184,0.28)",
+              border: "1px solid rgba(173,184,184,0.28)",
               borderRadius: "18px",
               padding: "20px",
               background:
                 mode === "SET_PASSWORD"
-                  ? "rgba(8,47,73,0.78)"
-                  : "rgba(15,23,42,0.76)",
+                  ? "rgba(42,38,30,0.78)"
+                  : "rgba(21,25,29,0.76)",
               boxShadow: "0 18px 60px rgba(0,0,0,0.28)"
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: "10px", fontSize: "22px" }}>
-              1. Create IPR password
+              1. Configura password IPR
             </h2>
 
             <p
               style={{
                 marginTop: 0,
                 marginBottom: "18px",
-                color: "#cbd5e1",
+                color: "#adb8b8",
                 lineHeight: 1.55,
                 fontSize: "14px"
               }}
             >
-              Use this only after verified IPR onboarding. It creates or updates
-              the password linked to the verified Human IPR account.
+              Utilizza questa funzione soltanto dopo la verifica IPR.
+              La password viene associata all'identificativo IPR verificato.
             </p>
 
             <div style={{ display: "grid", gap: "14px" }}>
               <label style={labelStyle}>
-                Human IPR
+                Identificativo Human IPR
                 <input
                   value={createHumanIpr}
                   onChange={(event) => setCreateHumanIpr(event.target.value)}
@@ -775,7 +782,7 @@ export default function HbceJokerLoginPage() {
               </label>
 
               <label style={labelStyle}>
-                Create password
+                Nuova password
                 <input
                   value={createPassword}
                   onChange={(event) => setCreatePassword(event.target.value)}
@@ -786,7 +793,7 @@ export default function HbceJokerLoginPage() {
               </label>
 
               <label style={labelStyle}>
-                Confirm password
+                Conferma password
                 <input
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
@@ -798,42 +805,42 @@ export default function HbceJokerLoginPage() {
 
               <section
                 style={{
-                  border: "1px solid rgba(148,163,184,0.22)",
+                  border: "1px solid rgba(173,184,184,0.22)",
                   borderRadius: "14px",
                   padding: "12px",
-                  background: "rgba(2,6,23,0.62)"
+                  background: "rgba(12,14,16,0.62)"
                 }}
               >
                 <p
                   style={{
                     margin: "0 0 8px",
-                    color: "#e2e8f0",
+                    color: "#f0f0e9",
                     fontWeight: 800,
                     fontSize: "14px"
                   }}
                 >
-                  Create password checks
+                  Verifiche della password
                 </p>
 
                 <ul
                   style={{
                     margin: 0,
                     paddingLeft: "18px",
-                    color: "#cbd5e1",
+                    color: "#adb8b8",
                     fontSize: "13px",
                     lineHeight: 1.6
                   }}
                 >
-                  <li>Password inserted: {createPassword ? "yes" : "no"}</li>
-                  <li>Confirmation match: {passwordsMatch ? "yes" : "no"}</li>
-                  <li>Includes symbol: {hasSymbol(createPassword) ? "yes" : "no"}</li>
+                  <li>Password inserita: {createPassword ? "sì" : "no"}</li>
+                  <li>Conferma corrispondente: {passwordsMatch ? "sì" : "no"}</li>
+                  <li>Contiene un simbolo: {hasSymbol(createPassword) ? "sì" : "no"}</li>
                   <li>
-                    Obvious project fragment:{" "}
+                    Riferimenti al progetto:{" "}
                     {hasWeakProjectFragment(createPassword)
-                      ? "detected"
-                      : "not detected"}
+                      ? "rilevati"
+                      : "non rilevati"}
                   </li>
-                  <li>Verified handoff loaded: {handoffLoaded ? "yes" : "no"}</li>
+                  <li>Dati di passaggio IPR caricati: {handoffLoaded ? "sì" : "no"}</li>
                 </ul>
 
                 {createPasswordHints.length > 0 ? (
@@ -856,8 +863,8 @@ export default function HbceJokerLoginPage() {
                       lineHeight: 1.5
                     }}
                   >
-                    Client-side checks passed. Server-side policy remains
-                    authoritative.
+                    Le verifiche preliminari sono superate. La validazione
+                    del server rimane determinante.
                   </p>
                 )}
               </section>
@@ -866,18 +873,18 @@ export default function HbceJokerLoginPage() {
                 <summary
                   style={{
                     cursor: "pointer",
-                    color: "#dbeafe",
+                    color: "#ddc49a",
                     fontWeight: 800,
                     fontSize: "14px"
                   }}
                 >
-                  HBCE IPR handoff JSON
+                  Dati di passaggio IPR (JSON)
                 </summary>
 
                 <textarea
                   value={handoffText}
                   onChange={(event) => setHandoffText(event.target.value)}
-                  placeholder="Required for password creation."
+                  placeholder="Necessario per configurare la password."
                   spellCheck={false}
                   rows={8}
                   style={{
@@ -907,45 +914,45 @@ export default function HbceJokerLoginPage() {
                 }}
               >
                 {loginState.status === "LOADING" && mode === "SET_PASSWORD"
-                  ? "Creating password..."
-                  : "Create IPR password"}
+                  ? "Creazione password in corso..."
+                  : "Configura password IPR"}
               </button>
             </div>
           </article>
 
           <article
             style={{
-              border: "1px solid rgba(148,163,184,0.28)",
+              border: "1px solid rgba(173,184,184,0.28)",
               borderRadius: "18px",
               padding: "20px",
               background:
                 mode === "LOGIN"
                   ? "rgba(20,83,45,0.42)"
-                  : "rgba(15,23,42,0.76)",
+                  : "rgba(21,25,29,0.76)",
               boxShadow: "0 18px 60px rgba(0,0,0,0.28)"
             }}
           >
             <h2 style={{ marginTop: 0, marginBottom: "10px", fontSize: "22px" }}>
-              2. Login to JOKER-C2
+              2. Accedi a JOKER-C2
             </h2>
 
             <p
               style={{
                 marginTop: 0,
                 marginBottom: "18px",
-                color: "#cbd5e1",
+                color: "#adb8b8",
                 lineHeight: 1.55,
                 fontSize: "14px"
               }}
             >
-              Use this after the password already exists. One Human IPR, one
-              password, then enter the governed runtime. Miracolo: un login che
-              somiglia a un login.
+              Accedi utilizzando il tuo identificativo IPR e la password esistente.
+              L'accesso al runtime governato resta soggetto alla verifica
+              della sessione e delle autorizzazioni.
             </p>
 
             <div style={{ display: "grid", gap: "14px" }}>
               <label style={labelStyle}>
-                Human IPR
+                Identificativo Human IPR
                 <input
                   value={loginHumanIpr}
                   onChange={(event) => setLoginHumanIpr(event.target.value)}
@@ -957,7 +964,7 @@ export default function HbceJokerLoginPage() {
               </label>
 
               <label style={labelStyle}>
-                IPR password
+                Password IPR
                 <input
                   value={loginPassword}
                   onChange={(event) => setLoginPassword(event.target.value)}
@@ -973,7 +980,7 @@ export default function HbceJokerLoginPage() {
               </label>
 
               <label style={labelStyle}>
-                Device label
+                Nome dispositivo
                 <input
                   value={deviceLabel}
                   onChange={(event) => setDeviceLabel(event.target.value)}
@@ -995,8 +1002,8 @@ export default function HbceJokerLoginPage() {
                 }}
               >
                 {loginState.status === "LOADING" && mode === "LOGIN"
-                  ? "Logging in..."
-                  : "Login to JOKER-C2"}
+                  ? "Accesso in corso..."
+                  : "Accedi a JOKER-C2"}
               </button>
 
               <button
@@ -1012,8 +1019,8 @@ export default function HbceJokerLoginPage() {
                 }}
               >
                 {sessionState.status === "LOADING"
-                  ? "Checking session..."
-                  : "Check IPR session"}
+                  ? "Verifica sessione in corso..."
+                  : "Verifica sessione IPR"}
               </button>
 
               <a
@@ -1022,20 +1029,20 @@ export default function HbceJokerLoginPage() {
                   display: "inline-flex",
                   justifyContent: "center",
                   textDecoration: "none",
-                  border: "1px solid rgba(148,163,184,0.35)",
+                  border: "1px solid rgba(173,184,184,0.35)",
                   borderRadius: "999px",
                   padding: "13px 18px",
                   background:
                     activeSession || loginSucceeded
                       ? "#22c55e"
-                      : "rgba(15,23,42,0.9)",
+                      : "rgba(21,25,29,0.9)",
                   color:
-                    activeSession || loginSucceeded ? "#020617" : "#f8fafc",
+                    activeSession || loginSucceeded ? "#0c0e10" : "#f0f0e9",
                   fontWeight: 900,
                   fontSize: "15px"
                 }}
               >
-                Open JOKER-C2 interface
+                Apri interfaccia JOKER-C2
               </a>
             </div>
           </article>
@@ -1043,27 +1050,27 @@ export default function HbceJokerLoginPage() {
 
         <section
           style={{
-            border: "1px solid rgba(148,163,184,0.28)",
+            border: "1px solid rgba(173,184,184,0.28)",
             borderRadius: "18px",
             padding: "20px",
-            background: "rgba(15,23,42,0.76)",
+            background: "rgba(21,25,29,0.76)",
             boxShadow: "0 18px 60px rgba(0,0,0,0.28)",
             marginBottom: "18px"
           }}
         >
           <h2 style={{ marginTop: 0, marginBottom: "10px", fontSize: "22px" }}>
-            Access status
+            Stato di accesso
           </h2>
 
           <div
             style={{
-              border: "1px solid rgba(148,163,184,0.22)",
+              border: "1px solid rgba(173,184,184,0.22)",
               borderRadius: "14px",
               padding: "14px",
               background:
                 activeSession || loginSucceeded
                   ? "rgba(34,197,94,0.12)"
-                  : "rgba(2,6,23,0.62)",
+                  : "rgba(12,14,16,0.62)",
               marginBottom: "16px"
             }}
           >
@@ -1076,8 +1083,8 @@ export default function HbceJokerLoginPage() {
               }}
             >
               {activeSession || loginSucceeded
-                ? "IPR account session active."
-                : "IPR account session not active yet."}
+                ? "Sessione IPR attiva."
+                : "Sessione IPR non ancora attiva."}
             </p>
           </div>
 
@@ -1090,7 +1097,7 @@ export default function HbceJokerLoginPage() {
           >
             <div>
               <p style={statusTitleStyle}>
-                Login request: {getStatusLabel(loginState)}
+                Richiesta di accesso: {getStatusLabel(loginState)}
               </p>
 
               {loginState.httpStatus ? (
@@ -1098,11 +1105,11 @@ export default function HbceJokerLoginPage() {
               ) : null}
 
               {loginState.receivedAt ? (
-                <p style={statusTextStyle}>Received: {loginState.receivedAt}</p>
+                <p style={statusTextStyle}>Ricevuto: {loginState.receivedAt}</p>
               ) : null}
 
               {loginState.error ? (
-                <p style={errorTextStyle}>Error: {loginState.error}</p>
+                <p style={errorTextStyle}>Errore: {loginState.error}</p>
               ) : null}
 
               <ul style={summaryListStyle}>
@@ -1114,7 +1121,7 @@ export default function HbceJokerLoginPage() {
 
             <div>
               <p style={statusTitleStyle}>
-                Session check: {getStatusLabel(sessionState)}
+                Sessione IPR: {getStatusLabel(sessionState)}
               </p>
 
               {sessionState.httpStatus ? (
@@ -1122,11 +1129,11 @@ export default function HbceJokerLoginPage() {
               ) : null}
 
               {sessionState.receivedAt ? (
-                <p style={statusTextStyle}>Received: {sessionState.receivedAt}</p>
+                <p style={statusTextStyle}>Ricevuto: {sessionState.receivedAt}</p>
               ) : null}
 
               {sessionState.error ? (
-                <p style={errorTextStyle}>Error: {sessionState.error}</p>
+                <p style={errorTextStyle}>Errore: {sessionState.error}</p>
               ) : null}
 
               <ul style={summaryListStyle}>
@@ -1140,18 +1147,18 @@ export default function HbceJokerLoginPage() {
 
         <section
           style={{
-            border: "1px solid rgba(148,163,184,0.22)",
+            border: "1px solid rgba(173,184,184,0.22)",
             borderRadius: "18px",
             padding: "18px",
-            background: "rgba(2,6,23,0.78)",
+            background: "rgba(12,14,16,0.78)",
             marginBottom: "18px"
           }}
         >
           <h2 style={{ marginTop: 0, marginBottom: "8px", fontSize: "20px" }}>
-            Operational boundary
+            Limiti operativi
           </h2>
 
-          <p style={{ margin: 0, color: "#cbd5e1", lineHeight: 1.6 }}>
+          <p style={{ margin: 0, color: "#adb8b8", lineHeight: 1.6 }}>
             {PAGE_BOUNDARY}
           </p>
         </section>
@@ -1159,10 +1166,10 @@ export default function HbceJokerLoginPage() {
         <section style={{ display: "grid", gap: "18px" }}>
           <details
             style={{
-              border: "1px solid rgba(148,163,184,0.22)",
+              border: "1px solid rgba(173,184,184,0.22)",
               borderRadius: "18px",
               padding: "18px",
-              background: "rgba(2,6,23,0.78)"
+              background: "rgba(12,14,16,0.78)"
             }}
           >
             <summary
@@ -1172,7 +1179,7 @@ export default function HbceJokerLoginPage() {
                 marginBottom: "12px"
               }}
             >
-              Login response
+              Risposta autenticazione
             </summary>
 
             <pre style={preStyle}>
@@ -1187,10 +1194,10 @@ export default function HbceJokerLoginPage() {
 
           <details
             style={{
-              border: "1px solid rgba(148,163,184,0.22)",
+              border: "1px solid rgba(173,184,184,0.22)",
               borderRadius: "18px",
               padding: "18px",
-              background: "rgba(2,6,23,0.78)"
+              background: "rgba(12,14,16,0.78)"
             }}
           >
             <summary
@@ -1200,7 +1207,7 @@ export default function HbceJokerLoginPage() {
                 marginBottom: "12px"
               }}
             >
-              Session response
+              Risposta sessione
             </summary>
 
             <pre style={preStyle}>
@@ -1221,17 +1228,17 @@ export default function HbceJokerLoginPage() {
 const labelStyle: React.CSSProperties = {
   display: "grid",
   gap: "7px",
-  color: "#cbd5e1",
+  color: "#adb8b8",
   fontSize: "14px",
   fontWeight: 700
 };
 
 const inputStyle: React.CSSProperties = {
-  border: "1px solid rgba(148,163,184,0.35)",
+  border: "1px solid rgba(173,184,184,0.35)",
   borderRadius: "12px",
   padding: "12px 13px",
-  background: "#020617",
-  color: "#f8fafc",
+  background: "#0c0e10",
+  color: "#f0f0e9",
   fontSize: "15px"
 };
 
@@ -1244,8 +1251,8 @@ const primaryButtonStyle: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.22)",
   borderRadius: "999px",
   padding: "13px 18px",
-  background: "#38bdf8",
-  color: "#020617",
+  background: "#c9ac72",
+  color: "#0c0e10",
   fontWeight: 900,
   fontSize: "15px"
 };
@@ -1254,22 +1261,22 @@ const secondaryButtonStyle: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.22)",
   borderRadius: "999px",
   padding: "13px 18px",
-  background: "#f8fafc",
-  color: "#020617",
+  background: "#f0f0e9",
+  color: "#0c0e10",
   fontWeight: 800,
   fontSize: "15px"
 };
 
 const statusTitleStyle: React.CSSProperties = {
   margin: "0 0 8px",
-  color: "#e2e8f0",
+  color: "#f0f0e9",
   fontWeight: 900,
   fontSize: "15px"
 };
 
 const statusTextStyle: React.CSSProperties = {
   margin: "0 0 6px",
-  color: "#cbd5e1",
+  color: "#adb8b8",
   fontSize: "13px"
 };
 
@@ -1282,7 +1289,7 @@ const errorTextStyle: React.CSSProperties = {
 const summaryListStyle: React.CSSProperties = {
   margin: "10px 0 0",
   paddingLeft: "18px",
-  color: "#cbd5e1",
+  color: "#adb8b8",
   fontSize: "14px",
   lineHeight: 1.65
 };
@@ -1294,8 +1301,8 @@ const preStyle: React.CSSProperties = {
   margin: 0,
   padding: "16px",
   borderRadius: "14px",
-  background: "#020617",
-  color: "#dbeafe",
+  background: "#0c0e10",
+  color: "#ddc49a",
   fontSize: "13px",
   lineHeight: 1.5
 };

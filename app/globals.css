@@ -249,3 +249,9 @@ main {
     width: 100%;
   }
 }
+
+.joker-sigil-glyph {
+  display: block;
+  line-height: 1;
+  transform: translateY(-2px);
+}
