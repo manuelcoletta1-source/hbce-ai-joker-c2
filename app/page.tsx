@@ -8,19 +8,13 @@ export default function HomePage() {
       <div style={styles.container}>
         <header className="joker-header">
           <Link href="/" className="joker-brand">
-            <span className="joker-sigil" aria-hidden="true">🜏</span>
+            <span className="joker-sigil" aria-hidden="true"><span className="joker-sigil-glyph">🜏</span></span>
             <span>
               HERMETICUM B.C.E.
               <small>AI JOKER-C2 · Portale operativo</small>
             </span>
           </Link>
 
-          <nav className="joker-nav" aria-label="Navigazione">
-            <Link href="/interface">Interfaccia operativa</Link>
-            <a href="https://hbce-ipr-onboarding-app.vercel.app/">
-              Portale IPR
-            </a>
-          </nav>
         </header>
 
         <section style={styles.hero}>
