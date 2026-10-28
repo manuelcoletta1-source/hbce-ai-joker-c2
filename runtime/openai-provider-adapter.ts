@@ -3,8 +3,19 @@ import OpenAI from "openai";
 import type {
   LlmCompletionRequest,
   LlmCompletionResult,
+  LlmTokenUsage,
   LlmProviderAdapter
 } from "./llm-provider-contract";
+
+export class OpenAIEmptyResponseError extends Error {
+  constructor(
+    readonly usage: LlmTokenUsage,
+    readonly finishReason: string | null
+  ) {
+    super("OPENAI_EMPTY_RESPONSE");
+    this.name = "OpenAIEmptyResponseError";
+  }
+}
 
 export class OpenAIProviderAdapter implements LlmProviderAdapter {
   readonly providerId = "OPENAI";
@@ -39,27 +50,27 @@ export class OpenAIProviderAdapter implements LlmProviderAdapter {
       temperature: request.temperature ?? 0.35
     });
 
+    const usage = completion.usage;
+    const tokenUsage: LlmTokenUsage = {
+      inputTokens: usage?.prompt_tokens ?? null,
+      outputTokens: usage?.completion_tokens ?? null,
+      totalTokens: usage?.total_tokens ?? null,
+      cachedInputTokens: usage?.prompt_tokens_details?.cached_tokens ?? null,
+      reasoningTokens: usage?.completion_tokens_details?.reasoning_tokens ?? null
+    };
+
+    const finishReason = completion.choices[0]?.finish_reason ?? null;
     const answer = completion.choices[0]?.message?.content?.trim();
 
     if (!answer) {
-      throw new Error("OPENAI_EMPTY_RESPONSE");
+      throw new OpenAIEmptyResponseError(tokenUsage, finishReason);
     }
-
-    const usage = completion.usage;
 
     return {
       kind: "MODEL_OUTPUT",
       answer,
-      usage: {
-        inputTokens: usage?.prompt_tokens ?? null,
-        outputTokens: usage?.completion_tokens ?? null,
-        totalTokens: usage?.total_tokens ?? null,
-        cachedInputTokens:
-          usage?.prompt_tokens_details?.cached_tokens ?? null,
-        reasoningTokens:
-          usage?.completion_tokens_details?.reasoning_tokens ?? null
-      },
-      finishReason: completion.choices[0]?.finish_reason ?? null,
+      usage: tokenUsage,
+      finishReason,
       requestedProvider: this.providerId,
       executedProvider: this.providerId,
       model: completion.model || request.model

@@ -1284,8 +1284,7 @@ RETURNING audit_id, audit_hash;
     }
 
 
-    record.status = "PERSISTED";
-    record.persistenceBoundary = "DATABASE_PERSISTENT";
+
 
 
     return {

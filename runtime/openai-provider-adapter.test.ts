@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type OpenAI from "openai";
-import { OpenAIProviderAdapter } from "./openai-provider-adapter";
+import { OpenAIEmptyResponseError, OpenAIProviderAdapter } from "./openai-provider-adapter";
 
 const request = {
   model: "model-requested",
@@ -76,6 +76,39 @@ describe("HBCE OpenAI Provider Adapter", () => {
 
     await expect(adapterWithMock(create).complete(request))
       .rejects.toThrow("OPENAI_EMPTY_RESPONSE");
+  });
+
+  it("preserves token usage when provider output is empty", async () => {
+    const create = vi.fn().mockResolvedValue({
+      model: "model-executed",
+      choices: [{
+        message: { content: "   " },
+        finish_reason: "length"
+      }],
+      usage: {
+        prompt_tokens: 11,
+        completion_tokens: 5,
+        total_tokens: 16,
+        prompt_tokens_details: { cached_tokens: 2 },
+        completion_tokens_details: { reasoning_tokens: 1 }
+      }
+    });
+
+    const promise = adapterWithMock(create).complete(request);
+
+    await expect(promise).rejects.toBeInstanceOf(OpenAIEmptyResponseError);
+    await expect(promise).rejects.toMatchObject({
+      usage: {
+        inputTokens: 11,
+        outputTokens: 5,
+        totalTokens: 16,
+        cachedInputTokens: 2,
+        reasoningTokens: 1
+      },
+      finishReason: "length"
+    });
+
+    expect(create).toHaveBeenCalledOnce();
   });
 
   it("propagates provider failures", async () => {

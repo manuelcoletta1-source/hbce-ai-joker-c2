@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { OpenAIEmptyResponseError, OpenAIProviderAdapter } from "@/runtime/openai-provider-adapter";
+import { validateCognitiveProvenance, type CognitiveProvenance } from "@/runtime/cognitive-provenance";
 import { resolveIprAccountSessionFromRequestAsync } from "@/lib/ipr-auth-session-resolver";
 
 
@@ -536,6 +537,9 @@ type ProviderCompletionResult = {
   answer: string;
   usage: CompletionTokenUsage;
   finishReason: string | null;
+  origin: "MODEL_OUTPUT" | "LOCAL_FALLBACK";
+  attemptedProvider: "OPENAI" | null;
+  executedModel: string | null;
 };
 
 
@@ -3897,6 +3901,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   let providerName: "OPENAI" | "LOCAL" | "UNKNOWN" = "LOCAL";
   let tokenUsage: CompletionTokenUsage = EMPTY_TOKEN_USAGE;
   let finishReason: string | null = null;
+  let openAICompletionProvenance: CognitiveProvenance | null = null;
 
 
 
@@ -4730,8 +4735,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       answer = completion.answer;
       tokenUsage = completion.usage;
       finishReason = completion.finishReason;
-      providerState = "COMPLETED";
-      providerName = "OPENAI";
+      openAICompletionProvenance = {
+        origin: completion.origin,
+        requestedProvider: "OPENAI",
+        attemptedProvider: completion.attemptedProvider,
+        executedProvider: completion.origin === "MODEL_OUTPUT" ? "OPENAI" : null,
+        requestedModel: model,
+        executedModel: completion.executedModel
+      };
+
+      providerState = completion.origin === "MODEL_OUTPUT" ? "COMPLETED" : "LOCAL_FALLBACK";
+      providerName = completion.origin === "MODEL_OUTPUT" ? "OPENAI" : "LOCAL";
     } catch (error) {
       providerEnvelopeCompletedAtMs = Date.now();
       providerError = errorToMessage(error);
@@ -4742,6 +4756,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       break;
     }
   }
+
+  const cognitiveProvenance = validateCognitiveProvenance(
+    openAICompletionProvenance ??
+      (chatDispatchRoute === "OPENAI_PROVIDER"
+        ? {
+            origin: "PROVIDER_ERROR",
+            requestedProvider: "OPENAI",
+            attemptedProvider: "OPENAI",
+            executedProvider: null,
+            requestedModel: model,
+            executedModel: null
+          }
+        : {
+            origin: providerState === "LOCAL_FALLBACK"
+              ? "LOCAL_FALLBACK"
+              : "LOCAL_BRANCH",
+            requestedProvider: null,
+            attemptedProvider: null,
+            executedProvider: null,
+            requestedModel: null,
+            executedModel: null
+          })
+  );
 
   const safeAnswer = normalizeAssistantAnswer(answer, message, handoff, policy);
   const outputHash = sha256(safeAnswer);
@@ -5900,33 +5937,17 @@ async function completeWithOpenAI(args: {
         buildPlaceholderSaasRuntimeContext(args.memory.sessionId, args.handoff)
       ),
       usage: EMPTY_TOKEN_USAGE,
-      finishReason: null
+      finishReason: null,
+      origin: "LOCAL_FALLBACK",
+      attemptedProvider: null,
+      executedModel: null
     };
   }
 
 
 
 
-  const client = new OpenAI({
-    apiKey,
-
-    /*
-     * Provider execution budget.
-     *
-     * /api/v1/chat aborts the internal bridge at 55 seconds and
-     * /api/chat has maxDuration=60.
-     *
-     * Keep the cognitive provider inside a smaller bounded window
-     * so timeout/error handling can still generate EVT, OPC, Audit,
-     * Usage and the governed fallback response before the outer
-     * runtime budget expires.
-     */
-    timeout: 30_000,
-    maxRetries: 0
-  });
-
-
-
+  const provider = new OpenAIProviderAdapter(apiKey);
 
   const systemPrompt = buildSystemPrompt(
     args.handoff,
@@ -5972,19 +5993,35 @@ async function completeWithOpenAI(args: {
 
   const openAIRequestStartedAtMs = Date.now();
 
-  const completion = await client.chat.completions.create({
-    model: args.model,
-    messages,
-    temperature: 0.35
-  });
+  let completion: Awaited<ReturnType<OpenAIProviderAdapter["complete"]>>;
+
+  try {
+    completion = await provider.complete({
+      model: args.model,
+      messages,
+      temperature: 0.35
+    });
+  } catch (error) {
+    if (error instanceof OpenAIEmptyResponseError) {
+      return {
+        answer: buildEmptyProviderFallback(args.message, args.handoff, args.policy),
+        usage: error.usage,
+        finishReason: error.finishReason,
+        origin: "LOCAL_FALLBACK",
+        attemptedProvider: "OPENAI",
+        executedModel: null
+      };
+    }
+    throw error;
+  }
 
   const openAIRequestCompletedAtMs = Date.now();
 
 
 
 
-  const content = completion.choices[0]?.message?.content?.trim();
-  const finishReason = completion.choices[0]?.finish_reason ?? null;
+  const content = completion.answer;
+  const finishReason = completion.finishReason;
 
   const providerResponseParsedAtMs = Date.now();
 
@@ -6012,8 +6049,11 @@ async function completeWithOpenAI(args: {
   if (!content) {
     return {
       answer: buildEmptyProviderFallback(args.message, args.handoff, args.policy),
-      usage: normalizeCompletionUsage(completion.usage),
-      finishReason
+      usage: completion.usage,
+      finishReason,
+      origin: "LOCAL_FALLBACK",
+      attemptedProvider: "OPENAI",
+      executedModel: null
     };
   }
 
@@ -6022,8 +6062,11 @@ async function completeWithOpenAI(args: {
 
   return {
     answer: content,
-    usage: normalizeCompletionUsage(completion.usage),
-    finishReason
+    usage: completion.usage,
+    finishReason,
+    origin: completion.kind === "MODEL_OUTPUT" ? "MODEL_OUTPUT" : "LOCAL_FALLBACK",
+    attemptedProvider: "OPENAI",
+    executedModel: completion.kind === "MODEL_OUTPUT" ? completion.model : null
   };
 }
 
@@ -24137,7 +24180,7 @@ async function recordSaasAuditAndUsage(args: {
         ok: true,
         auditId: auditResult.record.auditId,
         auditHash: auditResult.record.auditHash,
-        status: auditResult.record.status,
+        status: auditResult.persistence.status,
         operationDecision: args.policy.operationDecision,
         securityOutcome: args.policy.securityOutcome,
         refused: args.policy.refused,
@@ -24155,7 +24198,7 @@ async function recordSaasAuditAndUsage(args: {
         ok: true,
         usageId: modelUsageResult.record.usageId,
         usageHash: modelUsageResult.record.usageHash,
-        status: modelUsageResult.record.status,
+        status: modelUsageResult.persistence.status,
         accountingMode: modelUsageResult.record.accountingMode,
         estimatedCostUnits: modelUsageResult.record.estimatedCostUnits,
         estimatedCostMinor: modelUsageResult.record.estimatedCostMinor,

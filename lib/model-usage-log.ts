@@ -1474,7 +1474,6 @@ RETURNING usage_id, usage_hash;
     }
 
 
-    record.status = "PERSISTED";
     record.persistenceBoundary = "DATABASE_PERSISTENT";
 
 
@@ -1650,7 +1649,6 @@ RETURNING usage_id, usage_hash;
     }
 
 
-    record.status = "PERSISTED";
     record.persistenceBoundary = "DATABASE_PERSISTENT";
 
 
